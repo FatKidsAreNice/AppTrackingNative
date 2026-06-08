@@ -21,8 +21,8 @@ class ColdstoreDashboardController extends Controller
     public function scanner(): View
     {
         return view('coldstore.scanner', [
-            'barcodeEndpoint' => route('api.coldstore.barcodes.store'),
-            'scannerPluginInstalled' => InstalledVersions::isInstalled('nativephp/mobile-scanner'),
+            'barcodeEndpoint' => route('api.coldstore.barcodes.store', absolute: false),
+            'cameraPluginInstalled' => InstalledVersions::isInstalled('nativephp/mobile-camera'),
             'remoteConfigured' => filled(config('coldstore.remote.base_url')),
             'scannerId' => config('coldstore.scanner.id'),
             'scanDirection' => config('coldstore.scanner.direction'),
@@ -32,15 +32,15 @@ class ColdstoreDashboardController extends Controller
     public function settings(): View
     {
         return view('coldstore.settings', [
-            'overviewEndpoint' => route('api.coldstore.overview'),
-            'barcodeEndpoint' => route('api.coldstore.barcodes.store'),
+            'overviewEndpoint' => route('api.coldstore.overview', absolute: false),
+            'barcodeEndpoint' => route('api.coldstore.barcodes.store', absolute: false),
             'remoteBaseUrl' => config('coldstore.remote.base_url'),
             'remoteOverviewPath' => config('coldstore.remote.overview_path'),
             'remoteBarcodePath' => config('coldstore.remote.barcode_path'),
             'pollIntervalSeconds' => config('coldstore.poll_interval_seconds'),
             'scannerId' => config('coldstore.scanner.id'),
             'scanDirection' => config('coldstore.scanner.direction'),
-            'scannerPluginInstalled' => InstalledVersions::isInstalled('nativephp/mobile-scanner'),
+            'cameraPluginInstalled' => InstalledVersions::isInstalled('nativephp/mobile-camera'),
         ]);
     }
 }

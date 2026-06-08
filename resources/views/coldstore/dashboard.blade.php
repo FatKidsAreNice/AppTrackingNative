@@ -7,12 +7,12 @@
         class="coldstore-page"
         data-coldstore-dashboard
         data-poll-interval="{{ $pollIntervalMs }}"
-        data-overview-endpoint="{{ route('api.coldstore.overview') }}"
+        data-overview-endpoint="{{ route('api.coldstore.overview', absolute: false) }}"
     >
         <section class="hero-banner">
             <div class="hero-banner__content">
                 <div class="hero-banner__brand">
-                    <img class="hero-banner__logo" src="{{ asset('logo_sauels.svg') }}" alt="Sauels Logo">
+                    <img class="hero-banner__logo" src="/logo_sauels.svg" alt="Sauels Logo">
                     <div>
                         <p class="hero-banner__eyebrow">Sauels Coldstore Monitor</p>
                         <h1 class="hero-banner__title">Track Overview</h1>

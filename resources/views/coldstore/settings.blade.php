@@ -7,14 +7,14 @@
         <section class="hero-banner">
             <div class="hero-banner__content">
                 <div class="hero-banner__brand">
-                    <img class="hero-banner__logo" src="{{ asset('logo_sauels.svg') }}" alt="Sauels Logo">
+                    <img class="hero-banner__logo" src="/logo_sauels.svg" alt="Sauels Logo">
                     <div>
                         <p class="hero-banner__eyebrow">Sauels Coldstore Monitor</p>
                         <h1 class="hero-banner__title">Integration Status</h1>
                     </div>
                 </div>
-                <span class="status-pill {{ $scannerPluginInstalled ? 'status-pill--ok' : 'status-pill--warn' }}">
-                    {{ $scannerPluginInstalled ? 'Scanner bereit' : 'Scanner Plugin offen' }}
+                <span class="status-pill {{ $cameraPluginInstalled ? 'status-pill--ok' : 'status-pill--warn' }}">
+                    {{ $cameraPluginInstalled ? 'Kamera bereit' : 'Kamera-Plugin offen' }}
                 </span>
             </div>
             <p class="hero-banner__subtitle">Hier siehst du, wie die App aktuell an den anderen PC angebunden ist.</p>

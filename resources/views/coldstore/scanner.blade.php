@@ -11,18 +11,18 @@
         <section class="hero-banner">
             <div class="hero-banner__content">
                 <div class="hero-banner__brand">
-                    <img class="hero-banner__logo" src="{{ asset('logo_sauels.svg') }}" alt="Sauels Logo">
+                    <img class="hero-banner__logo" src="/logo_sauels.svg" alt="Sauels Logo">
                     <div>
                         <p class="hero-banner__eyebrow">Sauels Coldstore Monitor</p>
                         <h1 class="hero-banner__title">Barcode Modul</h1>
                     </div>
                 </div>
-                <span class="status-pill {{ $scannerPluginInstalled ? 'status-pill--ok' : 'status-pill--warn' }}">
-                    {{ $scannerPluginInstalled ? 'Scanner Plugin aktiv' : 'Scanner Plugin fehlt' }}
+                <span class="status-pill {{ $cameraPluginInstalled ? 'status-pill--ok' : 'status-pill--warn' }}">
+                    {{ $cameraPluginInstalled ? 'Kamera-Plugin aktiv' : 'Manueller Fallback aktiv' }}
                 </span>
             </div>
             <p class="hero-banner__subtitle">
-                Barcode scannen und direkt per HTTP POST an den anderen PC senden.
+                Kamera-Test mit dem freien NativePHP-Kamera-Plugin plus manuelle Barcode-Eingabe als Fallback.
             </p>
         </section>
 
@@ -30,8 +30,8 @@
             <article class="panel-card">
                 <div class="panel-card__header">
                     <div>
-                        <p class="panel-card__eyebrow">Senden</p>
-                        <h2 class="panel-card__title">Scan erfassen</h2>
+                        <p class="panel-card__eyebrow">Kamera-Test</p>
+                        <h2 class="panel-card__title">Fotoaufnahme prüfen</h2>
                     </div>
                 </div>
 
@@ -39,22 +39,29 @@
                     {{ $remoteConfigured ? 'Remote-POST ist konfiguriert.' : 'Remote-POST ist noch nicht konfiguriert. Das Senden liefert sonst bewusst einen Fehler.' }}
                 </div>
 
-                @if (! $scannerPluginInstalled)
-                    <div class="callout callout--warn">
-                        Kamera-Scanning über NativePHP braucht im aktuellen Build noch das Paket <code>nativephp/mobile-scanner</code>.
-                        Das Formular unten funktioniert trotzdem für manuelle Eingabe oder einen Hardware-Scanner, der als Tastatur arbeitet.
-                    </div>
-                @endif
-
                 <div class="scanner-actions">
-                    <button class="hero-banner__button" type="button" data-open-native-scan>Mit Kamera scannen</button>
-                    <p class="panel-card__muted" data-scan-status>Bereit für den nächsten Scan.</p>
+                    <button class="hero-banner__button" type="button" data-open-native-camera>Kamera öffnen</button>
+                    <p class="panel-card__muted" data-camera-status>Bereit für den Kamera-Test.</p>
+                </div>
+
+                <div class="camera-preview" data-camera-preview hidden>
+                    <img class="camera-preview__image" alt="Zuletzt aufgenommenes Testfoto" data-camera-preview-image>
+                </div>
+                <p class="panel-card__muted" data-camera-path>Noch kein Foto aufgenommen.</p>
+            </article>
+
+            <article class="panel-card">
+                <div class="panel-card__header">
+                    <div>
+                        <p class="panel-card__eyebrow">Senden</p>
+                        <h2 class="panel-card__title">Barcode manuell erfassen</h2>
+                    </div>
                 </div>
 
                 <form class="scanner-form" data-barcode-form>
                     <label class="field">
                         <span class="field__label">Barcode ID</span>
-                        <input class="panel-input" name="barcode_id" type="text" autocomplete="off" placeholder="Barcode eingeben oder einscannen" required data-barcode-input>
+                        <input class="panel-input" name="barcode_id" type="text" autocomplete="off" placeholder="Barcode eingeben oder per Hardware-Scanner erfassen" required data-barcode-input>
                     </label>
                     <label class="field">
                         <span class="field__label">Scanner ID</span>
@@ -69,6 +76,7 @@
                     </label>
                     <button class="hero-banner__button hero-banner__button--full" type="submit">An anderen PC senden</button>
                 </form>
+                <p class="panel-card__muted" data-scan-status>Bereit für den nächsten manuellen Scan.</p>
             </article>
 
             <article class="panel-card">
@@ -95,7 +103,7 @@
 
     <script>
         window.coldstoreScannerConfig = {!! json_encode([
-            'scannerPluginInstalled' => $scannerPluginInstalled,
+            'cameraPluginInstalled' => $cameraPluginInstalled,
             'remoteConfigured' => $remoteConfigured,
             'scannerId' => $scannerId,
             'scanDirection' => $scanDirection,

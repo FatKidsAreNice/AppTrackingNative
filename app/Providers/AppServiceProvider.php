@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,6 +21,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        URL::forceHttps();
+        if ($this->app->isProduction()) {
+            URL::forceHttps();
+        }
+
+        Vite::createAssetPathsUsing(function (string $path): string {
+            return '/'.ltrim($path, '/');
+        });
     }
 }

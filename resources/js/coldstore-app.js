@@ -1,4 +1,4 @@
-import { Events, Off, On, Scanner } from '#nativephp';
+import { Camera, Events, Off, On } from '#nativephp';
 
 const csrfToken = document
     .querySelector('meta[name="csrf-token"]')
@@ -227,7 +227,7 @@ function bootDashboard() {
             detailTitle.textContent = 'Keine Auswahl';
             detailList.innerHTML = `
                 <dt>Hinweis</dt>
-                <dd>Bitte einen Track aus Liste oder Karte auswählen.</dd>
+                <dd>Bitte einen Track aus Liste oder Karte auswaehlen.</dd>
             `;
 
             return;
@@ -296,7 +296,11 @@ function bootScanner() {
     const scanStatus = root.querySelector('[data-scan-status]');
     const lastScan = root.querySelector('[data-last-scan]');
     const history = root.querySelector('[data-scan-history]');
-    const openScanButton = root.querySelector('[data-open-native-scan]');
+    const openCameraButton = root.querySelector('[data-open-native-camera]');
+    const cameraStatus = root.querySelector('[data-camera-status]');
+    const cameraPreview = root.querySelector('[data-camera-preview]');
+    const cameraPreviewImage = root.querySelector('[data-camera-preview-image]');
+    const cameraPath = root.querySelector('[data-camera-path]');
     const historyKey = 'coldstore-scan-history';
 
     const state = {
@@ -329,6 +333,7 @@ function bootScanner() {
     const renderLastScan = (entry = null) => {
         if (!entry) {
             lastScan.innerHTML = '<dt>Status</dt><dd>Noch kein Scan gesendet.</dd>';
+
             return;
         }
 
@@ -342,6 +347,24 @@ function bootScanner() {
         ]
             .map(([label, value]) => `<dt>${label}</dt><dd>${value}</dd>`)
             .join('');
+    };
+
+    const updateCameraPreview = (path = null) => {
+        if (!cameraPreview || !cameraPreviewImage || !cameraPath) {
+            return;
+        }
+
+        if (!path) {
+            cameraPreview.hidden = true;
+            cameraPreviewImage.removeAttribute('src');
+            cameraPath.textContent = 'Noch kein Foto aufgenommen.';
+
+            return;
+        }
+
+        cameraPreview.hidden = false;
+        cameraPreviewImage.src = path;
+        cameraPath.textContent = path;
     };
 
     const sendBarcode = async (payload) => {
@@ -400,44 +423,47 @@ function bootScanner() {
         }
     };
 
-    const handleNativePayload = async (payload) => {
+    const handlePhotoTaken = (payload) => {
         const parsedPayload = typeof payload === 'object' && payload !== null ? payload : {};
-        const barcodeId = parsedPayload.data ?? parsedPayload.barcode ?? parsedPayload.barcode_id ?? '';
-        const scannerId = scannerIdInput.value.trim() || window.coldstoreScannerConfig?.scannerId || 'coldstore-entry-01';
-        const direction = directionInput.value || window.coldstoreScannerConfig?.scanDirection || 'entry';
+        const photoPathValue = typeof payload === 'string' ? payload : parsedPayload.path ?? '';
 
-        if (!barcodeId) {
-            scanStatus.textContent = 'Scanner lieferte keinen Barcode.';
+        if (!photoPathValue) {
+            cameraStatus.textContent = 'Foto aufgenommen, aber ohne Dateipfad zurueckgemeldet.';
+
             return;
         }
 
-        barcodeInput.value = barcodeId;
-
-        await sendBarcode({
-            barcode_id: barcodeId,
-            scanner_id: scannerId,
-            direction,
-            scanned_at: new Date().toISOString(),
-        });
+        cameraStatus.textContent = 'Kamera-Test erfolgreich. Foto wurde lokal aufgenommen.';
+        updateCameraPreview(photoPathValue);
     };
 
-    const nativeScanListener = async (payload) => {
-        await handleNativePayload(payload);
+    const handlePhotoCancelled = () => {
+        cameraStatus.textContent = 'Kamera-Test abgebrochen.';
     };
 
-    On(Events.Scanner.CodeScanned, nativeScanListener);
-    window.addEventListener('beforeunload', () => Off(Events.Scanner.CodeScanned, nativeScanListener));
+    const handleCameraPermissionDenied = () => {
+        cameraStatus.textContent = 'Kamera-Berechtigung wurde verweigert.';
+    };
 
-    openScanButton?.addEventListener('click', async () => {
-        scanStatus.textContent = 'Öffne Native Scanner Ansicht ...';
+    On(Events.Camera.PhotoTaken, handlePhotoTaken);
+    On(Events.Camera.PhotoCancelled, handlePhotoCancelled);
+    On(Events.Camera.PermissionDenied, handleCameraPermissionDenied);
+
+    window.addEventListener('beforeunload', () => {
+        Off(Events.Camera.PhotoTaken, handlePhotoTaken);
+        Off(Events.Camera.PhotoCancelled, handlePhotoCancelled);
+        Off(Events.Camera.PermissionDenied, handleCameraPermissionDenied);
+    });
+
+    openCameraButton?.addEventListener('click', async () => {
+        cameraStatus.textContent = 'Oeffne Kamera fuer den Geraetetest ...';
+        updateCameraPreview();
 
         try {
-            await Scanner.scan()
-                .prompt('Barcode am Schrank scannen')
-                .formats(['ean13', 'ean8', 'code128', 'code39', 'upca', 'upce', 'qr'])
+            await Camera.getPhoto()
                 .id(scannerIdInput.value.trim() || window.coldstoreScannerConfig?.scannerId || 'coldstore-entry-01');
         } catch (error) {
-            scanStatus.textContent = 'Native Scanner konnte nicht gestartet werden. Nutze alternativ das Eingabefeld.';
+            cameraStatus.textContent = 'Kamera konnte nicht gestartet werden. Im Browser ausserhalb der App ist das normal. Nutze alternativ das Eingabefeld.';
         }
     });
 

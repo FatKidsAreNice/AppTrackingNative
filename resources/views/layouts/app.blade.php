@@ -15,13 +15,13 @@
         </main>
 
         <nav class="mobile-nav" aria-label="Hauptnavigation">
-            <a class="mobile-nav__item {{ request()->routeIs('coldstore.dashboard') ? 'mobile-nav__item--active' : '' }}" href="{{ route('coldstore.dashboard') }}">
+            <a class="mobile-nav__item {{ request()->routeIs('coldstore.dashboard') ? 'mobile-nav__item--active' : '' }}" href="{{ route('coldstore.dashboard', absolute: false) }}">
                 <span>Overview</span>
             </a>
-            <a class="mobile-nav__item {{ request()->routeIs('coldstore.scanner') ? 'mobile-nav__item--active' : '' }}" href="{{ route('coldstore.scanner') }}">
+            <a class="mobile-nav__item {{ request()->routeIs('coldstore.scanner') ? 'mobile-nav__item--active' : '' }}" href="{{ route('coldstore.scanner', absolute: false) }}">
                 <span>Scanner</span>
             </a>
-            <a class="mobile-nav__item {{ request()->routeIs('coldstore.settings') ? 'mobile-nav__item--active' : '' }}" href="{{ route('coldstore.settings') }}">
+            <a class="mobile-nav__item {{ request()->routeIs('coldstore.settings') ? 'mobile-nav__item--active' : '' }}" href="{{ route('coldstore.settings', absolute: false) }}">
                 <span>Status</span>
             </a>
         </nav>
