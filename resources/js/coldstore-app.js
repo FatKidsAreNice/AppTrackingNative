@@ -139,21 +139,21 @@ function bootDashboard() {
         const backgroundBase64 = state.overview.map?.background_base64;
         const backgroundUrl = state.overview.map?.background_url;
         const imageHref = backgroundBase64 ? `data:image/png;base64,${backgroundBase64}` : backgroundUrl;
-
         const trackMarkup = tracks
             .map((track) => {
                 const point = mapPoint(track.x, track.y);
-                const arrowLength = track.track_id === Number(state.selectedTrackId) ? 6 : 4;
-                const arrowX = point.x + Math.cos(track.yaw) * arrowLength;
-                const arrowY = point.y - Math.sin(track.yaw) * arrowLength;
-                const radius = track.track_id === Number(state.selectedTrackId) ? 2.2 : 1.4;
+                const radius = track.track_id === Number(state.selectedTrackId) ? 2.4 : 1.7;
 
                 return `
-                    <g class="track-node" data-track-node="${track.track_id}">
-                        <circle cx="${point.x}" cy="${point.y}" r="${radius}" fill="${trackColor(track)}" stroke="${track.track_id === Number(state.selectedTrackId) ? '#111827' : 'none'}" stroke-width="0.5"></circle>
-                        <line x1="${point.x}" y1="${point.y}" x2="${arrowX}" y2="${arrowY}" stroke="${trackColor(track)}" stroke-width="0.7"></line>
-                        <text x="${point.x + 2}" y="${point.y - 2}" fill="#102511" font-size="3.2">${track.display_id}</text>
-                    </g>
+                    <circle
+                        cx="${point.x}"
+                        cy="${point.y}"
+                        r="${radius}"
+                        fill="${trackColor(track)}"
+                        stroke="${track.track_id === Number(state.selectedTrackId) ? '#111827' : 'none'}"
+                        stroke-width="${track.track_id === Number(state.selectedTrackId) ? '0.45' : '0'}"
+                        data-track-node="${track.track_id}"
+                    ></circle>
                 `;
             })
             .join('');

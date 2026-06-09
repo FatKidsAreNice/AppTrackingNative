@@ -115,6 +115,14 @@ class ColdstoreApiService
             return $track;
         }, $tracks);
 
+        $backgroundUrl = $payload['overview_image_url']
+            ?? $payload['bev_image_url']
+            ?? null;
+
+        $backgroundBase64 = $payload['overview_image_base64']
+            ?? $payload['bev_image_base64']
+            ?? null;
+
         return [
             'meta' => [
                 'source_mode' => $sourceMode,
@@ -138,9 +146,9 @@ class ColdstoreApiService
             'map' => [
                 'roi_min' => array_values($payload['map_roi_min'] ?? [-14.5, -15.0]),
                 'roi_max' => array_values($payload['map_roi_max'] ?? [9.0, 6.0]),
-                'background_url' => $payload['bev_image_url'] ?? null,
-                'background_base64' => $payload['bev_image_base64'] ?? null,
-                'show_background' => filled($payload['bev_image_url'] ?? null) || filled($payload['bev_image_base64'] ?? null),
+                'background_url' => $backgroundUrl,
+                'background_base64' => $backgroundBase64,
+                'show_background' => filled($backgroundUrl) || filled($backgroundBase64),
                 'overlay_max_time_delta_sec' => (float) ($payload['bev_overlay_max_time_delta_sec'] ?? 0.75),
             ],
             'tracks' => $tracks,
@@ -324,6 +332,7 @@ class ColdstoreApiService
             'lookup_mode' => 'track_id',
             'map_roi_min' => [-14.5, -15.0],
             'map_roi_max' => [9.0, 6.0],
+            'overview_image_url' => null,
             'bev_image_url' => null,
             'tracks' => [
                 [
