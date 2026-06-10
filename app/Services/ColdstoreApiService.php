@@ -146,6 +146,7 @@ class ColdstoreApiService
             'map' => [
                 'roi_min' => array_values($payload['map_roi_min'] ?? [-14.5, -15.0]),
                 'roi_max' => array_values($payload['map_roi_max'] ?? [9.0, 6.0]),
+                'rotation_deg' => (float) ($payload['map_rotation_deg'] ?? 0),
                 'background_url' => $backgroundUrl,
                 'background_base64' => $backgroundBase64,
                 'show_background' => filled($backgroundUrl) || filled($backgroundBase64),
@@ -332,6 +333,7 @@ class ColdstoreApiService
             'lookup_mode' => 'track_id',
             'map_roi_min' => [-14.5, -15.0],
             'map_roi_max' => [9.0, 6.0],
+            'map_rotation_deg' => 0,
             'overview_image_url' => null,
             'bev_image_url' => null,
             'tracks' => [

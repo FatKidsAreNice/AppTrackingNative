@@ -43,6 +43,7 @@ function bootDashboard() {
     const detailTitle = root.querySelector('[data-detail-title]');
     const filterInput = root.querySelector('[data-track-filter]');
     const refreshButton = root.querySelector('[data-refresh-overview]');
+    const rootStyles = window.getComputedStyle(document.documentElement);
 
     filterInput?.addEventListener('input', (event) => {
         state.filter = event.target.value.toLowerCase();
@@ -165,12 +166,20 @@ function bootDashboard() {
     function mapPoint(x, y) {
         const [minX, minY] = state.overview.map?.roi_min ?? [-14.5, -15];
         const [maxX, maxY] = state.overview.map?.roi_max ?? [9, 6];
-        const xRatio = maxX <= minX ? 0 : (x - minX) / (maxX - minX);
-        const yRatio = maxY <= minY ? 0 : (maxY - y) / (maxY - minY);
+        const rotationDeg = Number(state.overview.map?.rotation_deg ?? 0);
+        const trackOffsetY = Number.parseFloat(rootStyles.getPropertyValue('--bev-track-offset-y')) || 0;
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const normalizedRotationDeg = Number.isFinite(rotationDeg) ? rotationDeg : 0;
+        const rotationRad = (normalizedRotationDeg * Math.PI) / 180;
+        const rotatedX = centerX + ((x - centerX) * Math.cos(rotationRad)) - ((y - centerY) * Math.sin(rotationRad));
+        const rotatedY = centerY + ((x - centerX) * Math.sin(rotationRad)) + ((y - centerY) * Math.cos(rotationRad));
+        const xRatio = maxX <= minX ? 0 : (rotatedX - minX) / (maxX - minX);
+        const yRatio = maxY <= minY ? 0 : (maxY - rotatedY) / (maxY - minY);
 
         return {
             x: Math.max(0, Math.min(100, xRatio * 100)),
-            y: Math.max(0, Math.min(100, yRatio * 100)),
+            y: Math.max(0, Math.min(100, (yRatio * 100) + trackOffsetY)),
         };
     }
 
@@ -197,6 +206,8 @@ function bootDashboard() {
         const tracks = state.overview.tracks ?? [];
         const backgroundBase64 = state.overview.map?.background_base64;
         const backgroundUrl = state.overview.map?.background_url;
+        const frameId = state.overview.meta?.frame_id ?? 'coldstore-map';
+        const clipPathId = `bev-map-clip-${String(frameId).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
         const imageHref = backgroundBase64 ? `data:image/png;base64,${backgroundBase64}` : backgroundUrl;
         const trackMarkup = tracks
             .map((track) => {
@@ -218,11 +229,20 @@ function bootDashboard() {
             .join('');
 
         map.innerHTML = `
+            <defs>
+                <clipPath id="${clipPathId}">
+                    <rect x="4" y="4" width="92" height="92" rx="4"></rect>
+                </clipPath>
+            </defs>
             <rect x="0" y="0" width="100" height="100" fill="#f3f7f4" rx="6"></rect>
-            ${imageHref ? `<image href="${imageHref}" x="4" y="4" width="92" height="92" preserveAspectRatio="none"></image>` : ''}
-            <rect x="4" y="4" width="92" height="92" fill="none" stroke="#3d5a40" stroke-width="1"></rect>
+            <rect x="4" y="4" width="92" height="92" fill="#ffffff" rx="4"></rect>
+            <g class="bev-rotation-layer" clip-path="url(#${clipPathId})">
+                ${imageHref ? `<image class="bev-map-image" href="${imageHref}" x="4" y="4" width="92" height="92" preserveAspectRatio="none"></image>` : ''}
+                ${trackMarkup}
+            </g>
+            <rect x="4" y="4" width="92" height="10" fill="#d9e8da" rx="3"></rect>
             <text x="6" y="10" fill="#2f4f35" font-size="4.2" font-weight="700">BEV Track Positions</text>
-            ${trackMarkup}
+            <rect x="0.5" y="0.5" width="99" height="99" fill="none" stroke="#3d5a40" stroke-width="1" rx="6"></rect>
         `;
 
         map.querySelectorAll('[data-track-node]').forEach((node) => {

@@ -11,6 +11,8 @@
 }
 
 :root {
+    --bev-map-offset-x: 3%;
+    --bev-track-offset-y: 2;
     --coldstore-red: #d71920;
     --coldstore-red-dark: #8d0f17;
     --coldstore-blue: #0f3a63;
@@ -295,6 +297,17 @@ body.coldstore-body {
     display: block;
     width: 100%;
     min-height: 20rem;
+}
+
+.track-map--rotated .bev-rotation-layer {
+    transform-box: fill-box;
+    transform-origin: center center;
+    transform: translateX(var(--bev-map-offset-x)) rotate(var(--bev-rotation-deg)) scale(var(--bev-rotation-scale));
+}
+
+.bev-map-image {
+    outline: none;
+    filter: none;
 }
 
 .track-node {

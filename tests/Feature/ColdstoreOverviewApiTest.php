@@ -23,6 +23,7 @@ it('proxies overview data from the remote pc', function () {
             'stamp_sec' => 1050.0,
             'bev_stamp_sec' => 1049.8,
             'lookup_mode' => 'track_id',
+            'map_rotation_deg' => 22.0,
             'overview_image_url' => 'http://coldstore.test/overview-image',
             'bev_image_url' => 'http://coldstore.test/bev-image',
             'tracks' => [
@@ -56,6 +57,7 @@ it('proxies overview data from the remote pc', function () {
         ->assertJsonPath('meta.frame_id', 'remote_frame')
         ->assertJsonPath('tracks.0.track_id', 7)
         ->assertJsonPath('tracks.0.class_name', 'rack_side')
+        ->assertJsonPath('map.rotation_deg', 22)
         ->assertJsonPath('map.background_url', 'http://coldstore.test/overview-image')
         ->assertJsonPath('coldstore.name', 'Remote Haus');
 });
