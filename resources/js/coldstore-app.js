@@ -18,12 +18,20 @@ function bootDashboard() {
 
     const overviewEndpoint = root.dataset.overviewEndpoint;
     const pollInterval = Number(root.dataset.pollInterval ?? '5000');
+    const initialOverview = window.coldstoreDashboardConfig ?? {};
+    const initialFrameId = initialOverview.meta?.frame_id ?? 'coldstore-map';
     const state = {
-        overview: window.coldstoreDashboardConfig ?? {},
+        overview: initialOverview,
         jobs: window.coldstoreDashboardJobs ?? [],
         filter: '',
         selectedJobUid: null,
-        selectedTrackId: window.coldstoreDashboardConfig?.overview?.selected_track_id ?? null,
+        selectedTrackId: initialOverview.overview?.selected_track_id ?? null,
+        mapBackgroundCache: {
+            [initialFrameId]: {
+                backgroundBase64: initialOverview.map?.background_base64 ?? null,
+                backgroundUrl: initialOverview.map?.background_url ?? null,
+            },
+        },
     };
 
     const jobsList = root.querySelector('[data-jobs-list]');
@@ -54,6 +62,40 @@ function bootDashboard() {
         await refreshOverview();
     });
 
+    function activeFrameId(overview = state.overview) {
+        return overview.meta?.frame_id ?? 'coldstore-map';
+    }
+
+    function syncMapBackgroundCache() {
+        const frameId = activeFrameId();
+        const cachedBackground = state.mapBackgroundCache[frameId] ?? {
+            backgroundBase64: null,
+            backgroundUrl: null,
+        };
+        const incomingBackgroundBase64 = state.overview.map?.background_base64 ?? null;
+        const incomingBackgroundUrl = state.overview.map?.background_url ?? null;
+
+        if (cachedBackground.backgroundBase64 || cachedBackground.backgroundUrl) {
+            state.overview.map = {
+                ...(state.overview.map ?? {}),
+                background_base64: cachedBackground.backgroundBase64,
+                background_url: cachedBackground.backgroundUrl,
+                show_background: Boolean(cachedBackground.backgroundBase64 || cachedBackground.backgroundUrl),
+            };
+
+            return;
+        }
+
+        if (!incomingBackgroundBase64 && !incomingBackgroundUrl) {
+            return;
+        }
+
+        state.mapBackgroundCache[frameId] = {
+            backgroundBase64: incomingBackgroundBase64,
+            backgroundUrl: incomingBackgroundUrl,
+        };
+    }
+
     async function refreshOverview() {
         refreshButton?.setAttribute('disabled', 'disabled');
 
@@ -69,6 +111,7 @@ function bootDashboard() {
             }
 
             state.overview = await response.json();
+            syncMapBackgroundCache();
 
             if (!state.selectedJobUid && !findSelectedTrack()) {
                 state.selectedTrackId = state.overview.overview?.selected_track_id ?? state.overview.tracks?.[0]?.track_id ?? null;
@@ -404,6 +447,7 @@ function bootDashboard() {
         renderDetails();
     }
 
+    syncMapBackgroundCache();
     render();
     window.setInterval(refreshOverview, pollInterval);
 }
