@@ -9,6 +9,8 @@ it('renders the overview dashboard', function () {
 
     $response->assertSuccessful()
         ->assertSee('Track Overview')
+        ->assertSee('Jobs')
+        ->assertSee('Linie 1')
         ->assertSee('Kühlhaus')
         ->assertSee('BEV-Quelle');
 });

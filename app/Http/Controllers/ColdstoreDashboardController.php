@@ -3,17 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Services\ColdstoreApiService;
+use App\Services\ColdstoreJobRepository;
 use Composer\InstalledVersions;
 use Illuminate\Contracts\View\View;
 
 class ColdstoreDashboardController extends Controller
 {
-    public function __construct(private ColdstoreApiService $coldstoreApiService) {}
+    public function __construct(
+        private ColdstoreApiService $coldstoreApiService,
+        private ColdstoreJobRepository $coldstoreJobRepository,
+    ) {}
 
     public function index(): View
     {
         return view('coldstore.dashboard', [
             'initialOverview' => $this->coldstoreApiService->fetchOverview(),
+            'jobs' => $this->coldstoreJobRepository->all(),
             'pollIntervalMs' => config('coldstore.poll_interval_seconds') * 1000,
         ]);
     }

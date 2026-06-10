@@ -47,6 +47,35 @@
             </article>
         </section>
 
+        <section class="jobs-panel">
+            <article class="panel-card">
+                <div class="panel-card__header">
+                    <div>
+                        <p class="panel-card__eyebrow">Jobs</p>
+                        <h2 class="panel-card__title">Vorbereitete Auftraege</h2>
+                    </div>
+                    <p class="panel-card__muted">Nach Dringlichkeit sortiert</p>
+                </div>
+                <div class="jobs-list" data-jobs-list>
+                    @foreach ($jobs as $job)
+                        <button class="job-row" type="button" data-select-job="{{ $job['uid'] }}">
+                            <span>
+                                <strong>UID {{ $job['uid'] }}</strong>
+                                <small>Aeltester Job zuerst</small>
+                            </span>
+                            <span>
+                                <strong>{{ $job['destination'] }}</strong>
+                                <small>Prioritaet {{ $job['priority'] }}</small>
+                            </span>
+                        </button>
+                    @endforeach
+                </div>
+                <p class="panel-card__muted jobs-panel__status" data-job-status>
+                    Job-Auswahl verknuepft bei Treffer die bestehende Track-Markierung.
+                </p>
+            </article>
+        </section>
+
         <section class="panel-grid">
             <article class="panel-card panel-card--map">
                 <div class="panel-card__header">
@@ -98,5 +127,6 @@
 
     <script>
         window.coldstoreDashboardConfig = @json($initialOverview);
+        window.coldstoreDashboardJobs = @json($jobs);
     </script>
 @endsection

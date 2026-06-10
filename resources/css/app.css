@@ -191,7 +191,8 @@ body.coldstore-body {
 
 .stats-grid,
 .panel-grid,
-.section-grid {
+.section-grid,
+.jobs-panel {
     display: grid;
     gap: 1rem;
     margin-top: 1rem;
@@ -257,6 +258,7 @@ body.coldstore-body {
 
 .panel-card__muted,
 .track-row small,
+.job-row small,
 .stack-item small,
 .section-card__note {
     color: #5b6877;
@@ -266,6 +268,10 @@ body.coldstore-body {
 .panel-card__description {
     margin-top: 0.5rem;
     color: #344256;
+}
+
+.jobs-panel__status {
+    margin-top: 1rem;
 }
 
 .panel-input {
@@ -297,17 +303,20 @@ body.coldstore-body {
 
 .stack-list,
 .track-list,
-.section-grid {
+.section-grid,
+.jobs-list {
     margin-top: 1rem;
 }
 
 .stack-list,
-.track-list {
+.track-list,
+.jobs-list {
     display: grid;
     gap: 0.75rem;
 }
 
 .track-row,
+.job-row,
 .stack-item,
 .section-card {
     display: grid;
@@ -315,6 +324,7 @@ body.coldstore-body {
 }
 
 .track-row,
+.job-row,
 .stack-item {
     width: 100%;
     padding: 0.85rem 0.95rem;
@@ -329,9 +339,22 @@ body.coldstore-body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.job-row {
+    cursor: pointer;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+
 .track-row--active {
     border-color: rgb(215 25 32 / 0.5);
     background: rgb(215 25 32 / 0.06);
+}
+
+.job-row--active {
+    border-color: rgb(15 58 99 / 0.45);
+    background:
+        linear-gradient(135deg, rgb(15 58 99 / 0.1), rgb(215 25 32 / 0.08)),
+        white;
+    box-shadow: 0 10px 24px rgb(15 58 99 / 0.08);
 }
 
 .detail-grid {
@@ -422,7 +445,8 @@ body.coldstore-body {
     .stats-grid,
     .panel-grid,
     .section-grid,
-    .track-row {
+    .track-row,
+    .job-row {
         grid-template-columns: minmax(0, 1fr);
     }
 

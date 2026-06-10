@@ -20,10 +20,13 @@ function bootDashboard() {
     const pollInterval = Number(root.dataset.pollInterval ?? '5000');
     const state = {
         overview: window.coldstoreDashboardConfig ?? {},
+        jobs: window.coldstoreDashboardJobs ?? [],
         filter: '',
+        selectedJobUid: null,
         selectedTrackId: window.coldstoreDashboardConfig?.overview?.selected_track_id ?? null,
     };
 
+    const jobsList = root.querySelector('[data-jobs-list]');
     const trackList = root.querySelector('[data-track-list]');
     const detailList = root.querySelector('[data-track-detail]');
     const sectionList = root.querySelector('[data-section-list]');
@@ -34,6 +37,7 @@ function bootDashboard() {
     const movingCount = root.querySelector('[data-moving-count]');
     const syncState = root.querySelector('[data-sync-state]');
     const bevSource = root.querySelector('[data-bev-source]');
+    const jobStatus = root.querySelector('[data-job-status]');
     const statusText = root.querySelector('[data-status-text]');
     const updatedAt = root.querySelector('[data-updated-at]');
     const detailTitle = root.querySelector('[data-detail-title]');
@@ -65,9 +69,11 @@ function bootDashboard() {
 
             state.overview = await response.json();
 
-            if (!findSelectedTrack()) {
+            if (!state.selectedJobUid && !findSelectedTrack()) {
                 state.selectedTrackId = state.overview.overview?.selected_track_id ?? state.overview.tracks?.[0]?.track_id ?? null;
             }
+
+            syncSelectedJobToTrack();
 
             render();
         } catch (error) {
@@ -101,6 +107,59 @@ function bootDashboard() {
 
     function findSelectedTrack() {
         return (state.overview.tracks ?? []).find((track) => track.track_id === Number(state.selectedTrackId)) ?? null;
+    }
+
+    function findTrackForJob(job) {
+        if (!job) {
+            return null;
+        }
+
+        return (state.overview.tracks ?? []).find((track) => {
+            return (
+                String(track.track_id) === String(job.uid)
+                || String(track.display_id) === String(job.uid)
+                || String(track.barcode_id) === String(job.uid)
+            );
+        }) ?? null;
+    }
+
+    function setTrackFilter(value) {
+        state.filter = value.toLowerCase();
+
+        if (filterInput) {
+            filterInput.value = value;
+        }
+    }
+
+    function selectJob(job) {
+        state.selectedJobUid = job.uid;
+        setTrackFilter(job.uid);
+
+        const matchingTrack = findTrackForJob(job);
+
+        if (matchingTrack) {
+            state.selectedTrackId = matchingTrack.track_id;
+        } else {
+            state.selectedTrackId = null;
+        }
+
+        render();
+    }
+
+    function syncSelectedJobToTrack() {
+        const selectedJob = state.jobs.find((job) => job.uid === state.selectedJobUid);
+
+        if (!selectedJob) {
+            return;
+        }
+
+        const matchingTrack = findTrackForJob(selectedJob);
+
+        if (matchingTrack) {
+            state.selectedTrackId = matchingTrack.track_id;
+        } else {
+            state.selectedTrackId = null;
+        }
     }
 
     function mapPoint(x, y) {
@@ -172,6 +231,53 @@ function bootDashboard() {
                 render();
             });
         });
+    }
+
+    function renderJobs() {
+        jobsList.innerHTML = state.jobs
+            .map((job) => {
+                const selected = job.uid === state.selectedJobUid;
+
+                return `
+                    <button class="job-row ${selected ? 'job-row--active' : ''}" type="button" data-select-job="${job.uid}">
+                        <span>
+                            <strong>UID ${job.uid}</strong>
+                            <small>Aeltester Job zuerst</small>
+                        </span>
+                        <span>
+                            <strong>${job.destination}</strong>
+                            <small>Prioritaet ${job.priority}</small>
+                        </span>
+                    </button>
+                `;
+            })
+            .join('');
+
+        jobsList.querySelectorAll('[data-select-job]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const job = state.jobs.find((entry) => entry.uid === button.dataset.selectJob);
+
+                if (!job) {
+                    return;
+                }
+
+                selectJob(job);
+            });
+        });
+
+        const selectedJob = state.jobs.find((job) => job.uid === state.selectedJobUid);
+
+        if (!selectedJob) {
+            jobStatus.textContent = 'Die manuelle Suche bleibt darunter als Fallback verfuegbar.';
+
+            return;
+        }
+
+        const matchingTrack = findTrackForJob(selectedJob);
+
+        jobStatus.textContent = matchingTrack
+            ? `Aktiver Job UID ${selectedJob.uid}: Live-Track ${matchingTrack.display_id} wurde markiert.`
+            : `Aktiver Job UID ${selectedJob.uid}: Noch kein passender Live-Track gefunden, die Suche wurde als Fallback gesetzt.`;
     }
 
     function renderTrackList() {
@@ -271,6 +377,7 @@ function bootDashboard() {
 
     function render() {
         renderMeta();
+        renderJobs();
         renderMap();
         renderTrackList();
         renderSections();
