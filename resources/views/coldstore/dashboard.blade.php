@@ -32,10 +32,6 @@
                 <p class="info-card__value" data-track-count>{{ $initialOverview['overview']['track_count'] }}</p>
             </article>
             <article class="info-card">
-                <p class="info-card__label">Bewegung aktiv</p>
-                <p class="info-card__value" data-moving-count>{{ $initialOverview['overview']['moving_count'] }}</p>
-            </article>
-            <article class="info-card">
                 <p class="info-card__label">Sync-Status</p>
                 <p class="info-card__value info-card__value--small" data-sync-state>{{ $initialOverview['overview']['status_text'] }}</p>
             </article>

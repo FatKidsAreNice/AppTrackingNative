@@ -12,6 +12,7 @@ it('renders the overview dashboard', function () {
         ->assertSee('Track Overview')
         ->assertSee('Jobs')
         ->assertSee('Linie 1')
+        ->assertDontSee('Bewegung aktiv')
         ->assertDontSee('track-map--rotated', false)
         ->assertSee('Kühlhaus')
         ->assertSee('BEV-Quelle');

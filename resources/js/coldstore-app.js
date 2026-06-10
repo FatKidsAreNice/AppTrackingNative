@@ -42,7 +42,6 @@ function bootDashboard() {
     const sourcePill = root.querySelector('[data-source-pill]');
     const subtitle = root.querySelector('[data-overview-subtitle]');
     const trackCount = root.querySelector('[data-track-count]');
-    const movingCount = root.querySelector('[data-moving-count]');
     const syncState = root.querySelector('[data-sync-state]');
     const bevSource = root.querySelector('[data-bev-source]');
     const jobStatus = root.querySelector('[data-job-status]');
@@ -139,8 +138,8 @@ function bootDashboard() {
                 track.display_id,
                 track.track_id,
                 track.barcode_id,
-                track.motion_state,
-                track.class_name,
+                track.x,
+                track.y,
             ]
                 .join(' ')
                 .toLowerCase();
@@ -226,23 +225,8 @@ function bootDashboard() {
         };
     }
 
-    function trackColor(track) {
-        if (track.track_id === Number(state.selectedTrackId)) {
-            return '#ff2255';
-        }
-
-        switch (track.motion_state) {
-            case 'moving':
-                return '#10b981';
-            case 'newly_appeared':
-                return '#2563eb';
-            case 'occluded':
-                return '#d97706';
-            case 'disappeared':
-                return '#94a3b8';
-            default:
-                return '#dc2626';
-        }
+    function trackColor() {
+        return '#d71920';
     }
 
     function renderMap() {
@@ -262,7 +246,7 @@ function bootDashboard() {
                         cx="${point.x}"
                         cy="${point.y}"
                         r="${radius}"
-                        fill="${trackColor(track)}"
+                        fill="${trackColor()}"
                         stroke="${track.track_id === Number(state.selectedTrackId) ? '#111827' : 'none'}"
                         stroke-width="${track.track_id === Number(state.selectedTrackId) ? '0.45' : '0'}"
                         data-track-node="${track.track_id}"
@@ -305,11 +289,11 @@ function bootDashboard() {
                     <button class="job-row ${selected ? 'job-row--active' : ''}" type="button" data-select-job="${job.uid}">
                         <span>
                             <strong>UID ${job.uid}</strong>
-                            <small>Ältester Job zuerst</small>
+                            <small>Aeltester Job zuerst</small>
                         </span>
                         <span>
                             <strong>${job.destination}</strong>
-                            <small>Priorität ${job.priority}</small>
+                            <small>Prioritaet ${job.priority}</small>
                         </span>
                     </button>
                 `;
@@ -331,7 +315,7 @@ function bootDashboard() {
         const selectedJob = state.jobs.find((job) => job.uid === state.selectedJobUid);
 
         if (!selectedJob) {
-            jobStatus.textContent = 'Die manuelle Suche bleibt darunter als Fallback verfügbar.';
+            jobStatus.textContent = 'Die manuelle Suche bleibt darunter als Fallback verfuegbar.';
 
             return;
         }
@@ -354,11 +338,11 @@ function bootDashboard() {
                     <button class="track-row ${selected ? 'track-row--active' : ''}" type="button" data-select-track="${track.track_id}">
                         <span>
                             <strong>${track.display_id}</strong>
-                            <small>${track.class_name} · ${track.state}</small>
+                            <small>Position x=${track.x.toFixed(2)}, y=${track.y.toFixed(2)}</small>
                         </span>
                         <span>
-                            <strong>${track.motion_state}</strong>
-                            <small>${track.confidence.toFixed(2)}</small>
+                            <strong>${selected ? 'Ausgewaehlt' : 'Track'}</strong>
+                            <small>${track.barcode_id || 'Kein Barcode'}</small>
                         </span>
                     </button>
                 `;
@@ -396,7 +380,7 @@ function bootDashboard() {
             detailTitle.textContent = 'Keine Auswahl';
             detailList.innerHTML = `
                 <dt>Hinweis</dt>
-                <dd>Bitte einen Track aus Liste oder Karte auswählen.</dd>
+                <dd>Bitte einen Track aus Liste oder Karte auswaehlen.</dd>
             `;
 
             return;
@@ -405,20 +389,8 @@ function bootDashboard() {
         detailTitle.textContent = selectedTrack.display_id;
         detailList.innerHTML = [
             ['Track ID', selectedTrack.track_id],
-            ['Class', selectedTrack.class_name],
-            ['State', selectedTrack.state],
-            ['Motion', selectedTrack.motion_state],
-            ['Confidence', selectedTrack.confidence.toFixed(3)],
+            ['Barcode', selectedTrack.barcode_id || '-'],
             ['Position', `x=${selectedTrack.x.toFixed(3)}, y=${selectedTrack.y.toFixed(3)}, z=${selectedTrack.z.toFixed(3)}`],
-            ['Yaw', selectedTrack.yaw.toFixed(3)],
-            ['Size', `L=${selectedTrack.length.toFixed(3)}, W=${selectedTrack.width.toFixed(3)}, H=${selectedTrack.height.toFixed(3)}`],
-            ['Velocity', `vx=${selectedTrack.vx.toFixed(2)}, vy=${selectedTrack.vy.toFixed(2)}, vz=${selectedTrack.vz.toFixed(2)}`],
-            ['Hits / Missed', `${selectedTrack.hit_count} / ${selectedTrack.source_missed_count}`],
-            ['Missed updates', selectedTrack.missed_updates],
-            ['Age', selectedTrack.age],
-            ['Lost transitions', selectedTrack.lost_transition_count],
-            ['Occluded transitions', selectedTrack.occluded_transition_count],
-            ['Reappeared', selectedTrack.reappeared_count],
             ['Last seen', selectedTrack.last_seen_sec.toFixed(3)],
             ['Last update', selectedTrack.last_stamp_sec.toFixed(3)],
         ]
@@ -431,7 +403,6 @@ function bootDashboard() {
         sourcePill.classList.toggle('status-pill--warn', state.overview.meta?.source_mode !== 'remote');
         subtitle.textContent = state.overview.overview?.subtitle ?? '';
         trackCount.textContent = state.overview.overview?.track_count ?? '0';
-        movingCount.textContent = state.overview.overview?.moving_count ?? '0';
         syncState.textContent = state.overview.overview?.status_text ?? '-';
         bevSource.textContent = state.overview.map?.background_url ? 'Live-Bild aktiv' : 'Nur Track-Overlay';
         statusText.textContent = state.overview.overview?.status_text ?? '-';
