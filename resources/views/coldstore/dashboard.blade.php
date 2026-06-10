@@ -52,7 +52,7 @@
                 <div class="panel-card__header">
                     <div>
                         <p class="panel-card__eyebrow">Jobs</p>
-                        <h2 class="panel-card__title">Vorbereitete Auftraege</h2>
+                        <h2 class="panel-card__title">Vorbereitete Auftäege</h2>
                     </div>
                     <p class="panel-card__muted">Nach Dringlichkeit sortiert</p>
                 </div>
@@ -61,11 +61,11 @@
                         <button class="job-row" type="button" data-select-job="{{ $job['uid'] }}">
                             <span>
                                 <strong>UID {{ $job['uid'] }}</strong>
-                                <small>Aeltester Job zuerst</small>
+                                <small>Ältester Job zuerst</small>
                             </span>
                             <span>
                                 <strong>{{ $job['destination'] }}</strong>
-                                <small>Prioritaet {{ $job['priority'] }}</small>
+                                <small>Priorität {{ $job['priority'] }}</small>
                             </span>
                         </button>
                     @endforeach

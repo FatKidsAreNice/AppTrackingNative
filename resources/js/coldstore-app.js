@@ -305,11 +305,11 @@ function bootDashboard() {
                     <button class="job-row ${selected ? 'job-row--active' : ''}" type="button" data-select-job="${job.uid}">
                         <span>
                             <strong>UID ${job.uid}</strong>
-                            <small>Aeltester Job zuerst</small>
+                            <small>Ältester Job zuerst</small>
                         </span>
                         <span>
                             <strong>${job.destination}</strong>
-                            <small>Prioritaet ${job.priority}</small>
+                            <small>Priorität ${job.priority}</small>
                         </span>
                     </button>
                 `;
@@ -331,7 +331,7 @@ function bootDashboard() {
         const selectedJob = state.jobs.find((job) => job.uid === state.selectedJobUid);
 
         if (!selectedJob) {
-            jobStatus.textContent = 'Die manuelle Suche bleibt darunter als Fallback verfuegbar.';
+            jobStatus.textContent = 'Die manuelle Suche bleibt darunter als Fallback verfügbar.';
 
             return;
         }
@@ -396,7 +396,7 @@ function bootDashboard() {
             detailTitle.textContent = 'Keine Auswahl';
             detailList.innerHTML = `
                 <dt>Hinweis</dt>
-                <dd>Bitte einen Track aus Liste oder Karte auswaehlen.</dd>
+                <dd>Bitte einen Track aus Liste oder Karte auswählen.</dd>
             `;
 
             return;
