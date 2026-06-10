@@ -83,6 +83,7 @@
                 </div>
                 <p class="panel-card__description">{{ $initialOverview['coldstore']['summary'] }}</p>
                 <div class="map-frame">
+                    <span class="bev-location-label">Kochkammer</span>
                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="track-map" data-track-map></svg>
                 </div>
                 <p class="panel-card__muted" data-status-text>{{ $initialOverview['overview']['status_text'] }}</p>

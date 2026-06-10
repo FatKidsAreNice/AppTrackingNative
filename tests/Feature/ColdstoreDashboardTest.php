@@ -11,6 +11,7 @@ it('renders the overview dashboard', function () {
     $response->assertSuccessful()
         ->assertSee('Track Overview')
         ->assertSee('Jobs')
+        ->assertSee('Kochkammer')
         ->assertSee('Linie 1')
         ->assertDontSee('Bewegung aktiv')
         ->assertDontSee('track-map--rotated', false)
