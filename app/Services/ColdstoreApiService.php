@@ -130,6 +130,7 @@ class ColdstoreApiService
                 'remote_label' => $this->remoteLabel(),
                 'lookup_mode' => $lookupMode,
                 'frame_id' => (string) ($payload['frame_id'] ?? 'coldstore-map'),
+                'track_stamp_sec' => $trackStamp,
                 'remote_error' => data_get($payload, 'meta.remote_error'),
             ],
             'overview' => [

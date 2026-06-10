@@ -55,6 +55,7 @@ it('proxies overview data from the remote pc', function () {
     $response->assertSuccessful()
         ->assertJsonPath('meta.source_mode', 'remote')
         ->assertJsonPath('meta.frame_id', 'remote_frame')
+        ->assertJsonPath('meta.track_stamp_sec', 1050)
         ->assertJsonPath('tracks.0.track_id', 7)
         ->assertJsonPath('tracks.0.class_name', 'rack_side')
         ->assertJsonPath('map.rotation_deg', 22)

@@ -26,6 +26,7 @@ function bootDashboard() {
         filter: '',
         selectedJobUid: null,
         selectedTrackId: initialOverview.overview?.selected_track_id ?? null,
+        trackSessionSeenAt: {},
         mapBackgroundCache: {
             [initialFrameId]: {
                 backgroundBase64: initialOverview.map?.background_base64 ?? null,
@@ -63,6 +64,24 @@ function bootDashboard() {
 
     function activeFrameId(overview = state.overview) {
         return overview.meta?.frame_id ?? 'coldstore-map';
+    }
+
+    function syncTrackSessionSeenAt() {
+        const visibleTrackIds = new Set(
+            (state.overview.tracks ?? []).map((track) => String(track.track_id)),
+        );
+
+        visibleTrackIds.forEach((trackId) => {
+            if (!state.trackSessionSeenAt[trackId]) {
+                state.trackSessionSeenAt[trackId] = Date.now();
+            }
+        });
+
+        Object.keys(state.trackSessionSeenAt).forEach((trackId) => {
+            if (!visibleTrackIds.has(trackId)) {
+                delete state.trackSessionSeenAt[trackId];
+            }
+        });
     }
 
     function syncMapBackgroundCache() {
@@ -111,6 +130,7 @@ function bootDashboard() {
 
             state.overview = await response.json();
             syncMapBackgroundCache();
+            syncTrackSessionSeenAt();
 
             if (!state.selectedJobUid && !findSelectedTrack()) {
                 state.selectedTrackId = state.overview.overview?.selected_track_id ?? state.overview.tracks?.[0]?.track_id ?? null;
@@ -223,6 +243,50 @@ function bootDashboard() {
             x: Math.max(0, Math.min(100, xRatio * 100)),
             y: Math.max(0, Math.min(100, (yRatio * 100) + trackOffsetY)),
         };
+    }
+
+    function formatTrackerStamp(seconds) {
+        const numericSeconds = Number(seconds);
+
+        if (!Number.isFinite(numericSeconds) || numericSeconds <= 0) {
+            return '-';
+        }
+
+        return `${numericSeconds.toFixed(3)} s`;
+    }
+
+    function formatLastSeenTime(trackStampSeconds) {
+        const numericTrackStamp = Number(trackStampSeconds);
+        const numericOverviewStamp = Number(state.overview.meta?.track_stamp_sec ?? 0);
+        const updatedAtValue = state.overview.meta?.updated_at;
+        const updatedAtMs = updatedAtValue ? new Date(updatedAtValue).getTime() : Number.NaN;
+
+        if (!Number.isFinite(numericTrackStamp) || numericTrackStamp <= 0) {
+            return '-';
+        }
+
+        if (!Number.isFinite(numericOverviewStamp) || numericOverviewStamp <= 0) {
+            return formatTrackerStamp(numericTrackStamp);
+        }
+
+        if (!Number.isFinite(updatedAtMs)) {
+            return formatTrackerStamp(numericTrackStamp);
+        }
+
+        const deltaSeconds = Math.max(0, numericOverviewStamp - numericTrackStamp);
+        const absoluteTimestamp = updatedAtMs - (deltaSeconds * 1000);
+
+        return new Date(absoluteTimestamp).toLocaleTimeString('de-DE');
+    }
+
+    function formatDuration(durationMs) {
+        const safeDurationMs = Math.max(0, durationMs);
+        const totalSeconds = Math.floor(safeDurationMs / 1000);
+        const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+        const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(totalSeconds % 60).padStart(2, '0');
+
+        return `${hours}:${minutes}:${secs}`;
     }
 
     function trackColor() {
@@ -386,13 +450,16 @@ function bootDashboard() {
             return;
         }
 
+        const sessionSeenAt = state.trackSessionSeenAt[String(selectedTrack.track_id)] ?? Date.now();
+
         detailTitle.textContent = selectedTrack.display_id;
         detailList.innerHTML = [
             ['Track ID', selectedTrack.track_id],
             ['Barcode', selectedTrack.barcode_id || '-'],
             ['Position', `x=${selectedTrack.x.toFixed(3)}, y=${selectedTrack.y.toFixed(3)}, z=${selectedTrack.z.toFixed(3)}`],
-            ['Last seen', selectedTrack.last_seen_sec.toFixed(3)],
-            ['Last update', selectedTrack.last_stamp_sec.toFixed(3)],
+            ['In Ansicht seit', new Date(sessionSeenAt).toLocaleTimeString('de-DE')],
+            ['Dauer in Ansicht', formatDuration(Date.now() - sessionSeenAt)],
+            ['Letzte Sichtung', formatLastSeenTime(selectedTrack.last_stamp_sec)],
         ]
             .map(([label, value]) => `<dt>${label}</dt><dd>${value}</dd>`)
             .join('');
@@ -419,7 +486,13 @@ function bootDashboard() {
     }
 
     syncMapBackgroundCache();
+    syncTrackSessionSeenAt();
     render();
+    window.setInterval(() => {
+        if (findSelectedTrack()) {
+            renderDetails();
+        }
+    }, 1000);
     window.setInterval(refreshOverview, pollInterval);
 }
 

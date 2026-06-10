@@ -76,5 +76,6 @@ it('embeds map rotation config for the frontend dashboard', function () {
     $response = $this->get(route('coldstore.dashboard'));
 
     $response->assertSuccessful()
-        ->assertSee('"rotation_deg":22', false);
+        ->assertSee('"rotation_deg":22', false)
+        ->assertSee('"track_stamp_sec":1050', false);
 });
