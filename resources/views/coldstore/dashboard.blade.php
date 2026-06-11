@@ -32,10 +32,6 @@
                 <p class="info-card__value" data-track-count>{{ $initialOverview['overview']['track_count'] }}</p>
             </article>
             <article class="info-card">
-                <p class="info-card__label">Sync-Status</p>
-                <p class="info-card__value info-card__value--small" data-sync-state>{{ $initialOverview['overview']['status_text'] }}</p>
-            </article>
-            <article class="info-card">
                 <p class="info-card__label">BEV-Quelle</p>
                 <p class="info-card__value info-card__value--small" data-bev-source>
                     {{ $initialOverview['map']['background_url'] ? 'Live-Bild aktiv' : 'Nur Track-Overlay' }}
@@ -95,7 +91,6 @@
                         <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="track-map" data-track-map></svg>
                     </div>
                 </div>
-                <p class="panel-card__muted" data-status-text>{{ $initialOverview['overview']['status_text'] }}</p>
             </article>
 
             <article class="panel-card">

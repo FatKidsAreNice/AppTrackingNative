@@ -43,10 +43,8 @@ function bootDashboard() {
     const sourcePill = root.querySelector('[data-source-pill]');
     const subtitle = root.querySelector('[data-overview-subtitle]');
     const trackCount = root.querySelector('[data-track-count]');
-    const syncState = root.querySelector('[data-sync-state]');
     const bevSource = root.querySelector('[data-bev-source]');
     const jobStatus = root.querySelector('[data-job-status]');
-    const statusText = root.querySelector('[data-status-text]');
     const updatedAt = root.querySelector('[data-updated-at]');
     const detailTitle = root.querySelector('[data-detail-title]');
     const filterInput = root.querySelector('[data-track-filter]');
@@ -468,9 +466,7 @@ function bootDashboard() {
         sourcePill.classList.toggle('status-pill--warn', state.overview.meta?.source_mode !== 'remote');
         subtitle.textContent = state.overview.overview?.subtitle ?? '';
         trackCount.textContent = state.overview.overview?.track_count ?? '0';
-        syncState.textContent = state.overview.overview?.status_text ?? '-';
         bevSource.textContent = state.overview.map?.background_url ? 'Live-Bild aktiv' : 'Nur Track-Overlay';
-        statusText.textContent = state.overview.overview?.status_text ?? '-';
         updatedAt.textContent = new Date(state.overview.meta?.updated_at ?? Date.now()).toLocaleString('de-DE');
     }
 
