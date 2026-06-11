@@ -1,6 +1,10 @@
 <?php
 
+use Illuminate\Support\Facades\Config;
+
 it('returns a matching job payload for a line with a track linked uid', function () {
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
+
     $response = $this->getJson(route('api.coldstore.jobs', ['selected_line' => 6]));
 
     $response->assertSuccessful()
@@ -11,7 +15,19 @@ it('returns a matching job payload for a line with a track linked uid', function
         ->assertJsonPath('matching_uids.0.track_id', 101);
 });
 
+it('accepts line as an alias for selected line in the jobs api', function () {
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
+
+    $response = $this->getJson(route('api.coldstore.jobs', ['line' => 6]));
+
+    $response->assertSuccessful()
+        ->assertJsonPath('selected_line', 6)
+        ->assertJsonPath('arbeitsplatz_nr', 3506);
+});
+
 it('returns a line with order but without matching inventory hit', function () {
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
+
     $response = $this->getJson(route('api.coldstore.jobs', ['selected_line' => 2]));
 
     $response->assertSuccessful()
@@ -21,6 +37,8 @@ it('returns a line with order but without matching inventory hit', function () {
 });
 
 it('returns a line without an open order', function () {
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
+
     $response = $this->getJson(route('api.coldstore.jobs', ['selected_line' => 3]));
 
     $response->assertSuccessful()
@@ -31,6 +49,8 @@ it('returns a line without an open order', function () {
 });
 
 it('returns multiple matching uids for a line with several hits', function () {
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
+
     $response = $this->getJson(route('api.coldstore.jobs', ['selected_line' => 4]));
 
     $response->assertSuccessful()
@@ -40,6 +60,8 @@ it('returns multiple matching uids for a line with several hits', function () {
 });
 
 it('returns matching uids even when no track is assigned', function () {
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
+
     $response = $this->getJson(route('api.coldstore.jobs', ['selected_line' => 5]));
 
     $response->assertSuccessful()

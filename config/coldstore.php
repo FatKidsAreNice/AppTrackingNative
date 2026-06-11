@@ -16,8 +16,8 @@ return [
     'jobs' => [
         'default_selected_line' => (int) env('COLDSTORE_JOBS_DEFAULT_LINE', 6),
         'production_orders' => [
-            'driver' => env('COLDSTORE_JOBS_PRODUCTION_ORDER_DRIVER', 'mock'),
-            'sqlsrv_connection' => env('COLDSTORE_JOBS_SQLSRV_CONNECTION', 'sqlsrv'),
+            'source' => env('COLDSTORE_PRODUCTION_ORDER_SOURCE', 'mock'),
+            'sqlsrv_connection' => env('COLDSTORE_JOBS_SQLSRV_CONNECTION', 'coldstore_sqlsrv'),
         ],
         'inventory' => [
             'driver' => env('COLDSTORE_JOBS_INVENTORY_DRIVER', 'mock'),

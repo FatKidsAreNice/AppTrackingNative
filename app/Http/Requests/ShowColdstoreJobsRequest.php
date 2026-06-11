@@ -9,6 +9,15 @@ use Illuminate\Validation\Rule;
 
 class ShowColdstoreJobsRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (! $this->has('selected_line') && $this->has('line')) {
+            $this->merge([
+                'selected_line' => $this->query('line'),
+            ]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;

@@ -114,6 +114,20 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        'coldstore_sqlsrv' => [
+            'driver' => 'sqlsrv',
+            'host' => env('COLDSTORE_SQLSERVER_HOST', 'db11.sauels.de'),
+            'port' => env('COLDSTORE_SQLSERVER_PORT', '1433'),
+            'database' => env('COLDSTORE_SQLSERVER_DATABASE', 'TP0030TS1'),
+            'username' => env('COLDSTORE_SQLSERVER_USERNAME', ''),
+            'password' => env('COLDSTORE_SQLSERVER_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'encrypt' => filter_var(env('COLDSTORE_SQLSERVER_ENCRYPT', true), FILTER_VALIDATE_BOOL),
+            'trust_server_certificate' => filter_var(env('COLDSTORE_SQLSERVER_TRUST_SERVER_CERTIFICATE', true), FILTER_VALIDATE_BOOL),
+        ],
+
     ],
 
     /*

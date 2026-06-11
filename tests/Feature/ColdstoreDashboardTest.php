@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Http;
 
 it('renders the overview dashboard', function () {
     Config::set('coldstore.remote.base_url', null);
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
 
     $response = $this->get(route('coldstore.dashboard'));
 
@@ -48,6 +49,7 @@ it('renders the settings page', function () {
 it('embeds map rotation config for the frontend dashboard', function () {
     Config::set('coldstore.remote.base_url', 'http://coldstore.test');
     Config::set('coldstore.remote.overview_path', '/overview');
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
 
     Http::fake([
         'http://coldstore.test/overview' => Http::response([

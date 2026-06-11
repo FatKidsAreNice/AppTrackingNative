@@ -6,6 +6,7 @@ use App\Services\ColdstoreJobs\ColdstoreInventoryRepository;
 use App\Services\ColdstoreJobs\MockColdstoreInventoryRepository;
 use App\Services\ColdstoreJobs\MockProductionOrderRepository;
 use App\Services\ColdstoreJobs\ProductionOrderRepository;
+use App\Services\ColdstoreJobs\SqlServerProductionOrderRepository;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -18,8 +19,11 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(ProductionOrderRepository::class, function ($app): ProductionOrderRepository {
-            return match (config('coldstore.jobs.production_orders.driver', 'mock')) {
+            return match (config('coldstore.jobs.production_orders.source', 'mock')) {
                 'mock' => $app->make(MockProductionOrderRepository::class),
+                'sqlsrv' => SqlServerProductionOrderRepository::driverAvailable()
+                    ? $app->make(SqlServerProductionOrderRepository::class)
+                    : $app->make(MockProductionOrderRepository::class),
                 default => $app->make(MockProductionOrderRepository::class),
             };
         });
