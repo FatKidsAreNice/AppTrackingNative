@@ -18,6 +18,7 @@
     --bev-location-label-offset-y: 150px;
     --bev-lines-label-offset-x: -42%;
     --bev-lines-label-offset-y: -179px;
+    --track-list-max-height: 31rem;
     --coldstore-red: #d71920;
     --coldstore-red-dark: #8d0f17;
     --coldstore-blue: #0f3a63;
@@ -408,6 +409,14 @@ body.coldstore-body {
 .jobs-list {
     display: grid;
     gap: 0.75rem;
+}
+
+.track-list {
+    max-height: var(--track-list-max-height);
+    padding-right: 0.25rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
 }
 
 .track-row,
