@@ -20,7 +20,7 @@ it('renders the overview dashboard', function () {
         ->assertSee('/api/coldstore/jobs', false)
         ->assertDontSee('Bewegung aktiv')
         ->assertDontSee('track-map--rotated', false)
-        ->assertSee('Kuehlhaus')
+        ->assertSee('Kühlhaus')
         ->assertSee('BEV-Quelle');
 });
 

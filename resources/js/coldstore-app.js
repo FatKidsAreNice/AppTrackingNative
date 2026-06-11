@@ -45,6 +45,8 @@ function bootDashboard() {
     const selectedLineValue = root.querySelector('[data-job-selected-line]');
     const selectedWorkplace = root.querySelector('[data-job-workplace]');
     const selectedJobSource = root.querySelector('[data-job-source]');
+    const coldstoreName = root.querySelector('[data-coldstore-name]');
+    const coldstoreSummary = root.querySelector('[data-coldstore-summary]');
     const linePicker = root.querySelector('[data-line-picker]');
     const linePickerToggle = root.querySelector('[data-toggle-line-picker]');
     const linePickerMenu = root.querySelector('[data-line-picker-menu]');
@@ -391,7 +393,7 @@ function bootDashboard() {
         if (!order) {
             jobOrder.innerHTML = `
                 <div class="job-order-card__empty">
-                    <p class="panel-card__eyebrow">Naechster Auftrag</p>
+                    <p class="panel-card__eyebrow">Nächster Auftrag</p>
                     <p>Fuer diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.</p>
                 </div>
             `;
@@ -402,7 +404,7 @@ function bootDashboard() {
         jobOrder.innerHTML = `
             <div class="job-order-card__header">
                 <div>
-                    <p class="panel-card__eyebrow">Naechster Auftrag</p>
+                    <p class="panel-card__eyebrow">Nächster Auftrag</p>
                     <h3 class="panel-card__title">${order.va_auftragsnr}</h3>
                 </div>
                 <span class="status-pill status-pill--ok">VA_Status ${order.va_status}</span>
@@ -438,7 +440,7 @@ function bootDashboard() {
         const matchingUids = state.jobsData.matching_uids ?? [];
 
         if (matchingUids.length === 0) {
-            jobStatus.textContent = 'Kein passender UID-Bestand im Kuehlhaus gefunden.';
+            jobStatus.textContent = 'Kein passender UID-Bestand im Kühlhaus gefunden.';
 
             return;
         }
@@ -446,7 +448,7 @@ function bootDashboard() {
         const selectedUid = findSelectedMatchingUid();
 
         if (!selectedUid) {
-            jobStatus.textContent = `${matchingUids.length} passende UID(s) im Kuehlhaus gefunden.`;
+            jobStatus.textContent = `${matchingUids.length} passende UID(s) im Kühlhaus gefunden.`;
 
             return;
         }
@@ -468,7 +470,7 @@ function bootDashboard() {
                 <article class="job-row job-row--empty">
                     <span>
                         <strong>Keine passende UID</strong>
-                        <small>Im aktuellen Kuehlhausbestand wurde noch kein Treffer gefunden.</small>
+                        <small>Im aktuellen Kühlhausbestand wurde noch kein Treffer gefunden.</small>
                     </span>
                 </article>
             `;
@@ -640,6 +642,14 @@ function bootDashboard() {
         trackCount.textContent = state.overview.overview?.track_count ?? '0';
         bevSource.textContent = state.overview.map?.background_url ? 'Live-Bild aktiv' : 'Nur Track-Overlay';
         updatedAt.textContent = new Date(state.overview.meta?.updated_at ?? Date.now()).toLocaleString('de-DE');
+
+        if (coldstoreName) {
+            coldstoreName.textContent = state.overview.coldstore?.name ?? '';
+        }
+
+        if (coldstoreSummary) {
+            coldstoreSummary.textContent = state.overview.coldstore?.summary ?? '';
+        }
     }
 
     function render() {

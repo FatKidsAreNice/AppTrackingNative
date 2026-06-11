@@ -46,7 +46,7 @@
                 <div class="panel-card__header">
                     <div>
                         <p class="panel-card__eyebrow">Jobs</p>
-                        <h2 class="panel-card__title">Vorbereitete Auftraege</h2>
+                        <h2 class="panel-card__title">Vorbereitete Aufträge</h2>
                     </div>
                     <div class="line-picker" data-line-picker>
                         <button class="line-picker__toggle" type="button" data-toggle-line-picker aria-expanded="false">
@@ -70,7 +70,7 @@
 
                 <div class="jobs-panel__meta" data-job-summary>
                     <article class="jobs-stat">
-                        <span class="jobs-stat__label">Ausgewaehlte Linie</span>
+                        <span class="jobs-stat__label">Ausgewählte Linie</span>
                         <strong class="jobs-stat__value" data-job-selected-line>Linie {{ $initialJobs['selected_line'] }}</strong>
                     </article>
                     <article class="jobs-stat">
@@ -87,7 +87,7 @@
                     @if ($initialOrder)
                         <div class="job-order-card__header">
                             <div>
-                                <p class="panel-card__eyebrow">Naechster Auftrag</p>
+                                <p class="panel-card__eyebrow">Nächster Auftrag</p>
                                 <h3 class="panel-card__title">{{ $initialOrder['va_auftragsnr'] }}</h3>
                             </div>
                             <span class="status-pill status-pill--ok">VA_Status {{ $initialOrder['va_status'] }}</span>
@@ -106,7 +106,7 @@
                         </dl>
                     @else
                         <div class="job-order-card__empty">
-                            <p class="panel-card__eyebrow">Naechster Auftrag</p>
+                            <p class="panel-card__eyebrow">Nächster Auftrag</p>
                             <p>Fuer diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.</p>
                         </div>
                     @endif
@@ -154,12 +154,12 @@
             <article class="panel-card panel-card--map">
                 <div class="panel-card__header">
                     <div>
-                        <p class="panel-card__eyebrow">Kuehlhaus</p>
-                        <h2 class="panel-card__title">{{ $initialOverview['coldstore']['name'] }}</h2>
+                        <p class="panel-card__eyebrow">Kühlhaus</p>
+                        <h2 class="panel-card__title" data-coldstore-name>{{ $initialOverview['coldstore']['name'] }}</h2>
                     </div>
                     <p class="panel-card__muted" data-updated-at>{{ $initialOverview['meta']['updated_at'] }}</p>
                 </div>
-                <p class="panel-card__description">{{ $initialOverview['coldstore']['summary'] }}</p>
+                <p class="panel-card__description" data-coldstore-summary>{{ $initialOverview['coldstore']['summary'] }}</p>
                 <div class="map-frame">
                     <div class="bev-map-header panel-card__header">
                         <div>
@@ -199,7 +199,7 @@
             <article class="panel-card panel-card--wide">
                 <div class="panel-card__header">
                     <div>
-                        <p class="panel-card__eyebrow">Kuehlhaus-Status</p>
+                        <p class="panel-card__eyebrow">Kühlhaus-Status</p>
                         <h2 class="panel-card__title">Bereiche</h2>
                     </div>
                 </div>
