@@ -17,6 +17,8 @@ it('renders the overview dashboard with local jobs api config', function () {
 
     $response->assertSuccessful()
         ->assertSee('Track Overview')
+        ->assertSee('Overview')
+        ->assertSee('Aufträge')
         ->assertSee('Jobs')
         ->assertSee('Kochkammer')
         ->assertSee('Linie 1')
@@ -25,6 +27,8 @@ it('renders the overview dashboard with local jobs api config', function () {
         ->assertSee('Required PEText1')
         ->assertSee('"dataSource":"local"', false)
         ->assertSee('"jobsPath":"\\/api\\/coldstore\\/jobs"', false)
+        ->assertSee('data-select-dashboard-screen="overview"', false)
+        ->assertSee('data-select-dashboard-screen="jobs"', false)
         ->assertDontSee('Bewegung aktiv')
         ->assertDontSee('track-map--rotated', false)
         ->assertSee('Kühlhaus')

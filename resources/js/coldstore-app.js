@@ -32,6 +32,7 @@ function bootDashboard() {
         jobLines: window.coldstoreDashboardJobLines ?? [],
         jobsError: null,
         jobsLoading: Boolean(initialJobs.meta?.loading),
+        activeDashboardScreen: 'overview',
         filter: '',
         selectedMatchingUid: null,
         selectedTrackId: initialOverview.overview?.selected_track_id ?? null,
@@ -52,6 +53,8 @@ function bootDashboard() {
     const selectedJobSource = root.querySelector('[data-job-source]');
     const coldstoreName = root.querySelector('[data-coldstore-name]');
     const coldstoreSummary = root.querySelector('[data-coldstore-summary]');
+    const dashboardScreens = root.querySelectorAll('[data-dashboard-screen]');
+    const dashboardScreenButtons = root.querySelectorAll('[data-select-dashboard-screen]');
     const linePicker = root.querySelector('[data-line-picker]');
     const linePickerToggle = root.querySelector('[data-toggle-line-picker]');
     const linePickerMenu = root.querySelector('[data-line-picker-menu]');
@@ -97,12 +100,32 @@ function bootDashboard() {
         }
     });
 
+    dashboardScreenButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            state.activeDashboardScreen = button.dataset.selectDashboardScreen ?? 'overview';
+            renderDashboardScreens();
+        });
+    });
+
     function setLinePickerOpen(isOpen) {
         linePickerToggle?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 
         if (linePickerMenu) {
             linePickerMenu.hidden = !isOpen;
         }
+    }
+
+    function renderDashboardScreens() {
+        dashboardScreens.forEach((screen) => {
+            screen.hidden = screen.dataset.dashboardScreen !== state.activeDashboardScreen;
+        });
+
+        dashboardScreenButtons.forEach((button) => {
+            const isActive = button.dataset.selectDashboardScreen === state.activeDashboardScreen;
+
+            button.classList.toggle('dashboard-switcher__item--active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
     }
 
     function activeFrameId(overview = state.overview) {
@@ -741,6 +764,7 @@ function bootDashboard() {
 
     function render() {
         renderMeta();
+        renderDashboardScreens();
         renderLinePicker();
         renderJobMeta();
         renderJobOrder();
