@@ -277,8 +277,3 @@ npm run build -- --mode=ios
 npm run build -- --mode=android
 ```
 
-## Notes For Contributors
-
-- keep overview, BEV, barcode and polling logic separate from the jobs flow
-- do not switch live SQL Server behavior on by default
-- do not commit real `.env` credentials or internal connection secrets
