@@ -16,6 +16,8 @@
     --bev-stage-rotation-deg: 180deg;
     --bev-location-label-offset-x: 5%;
     --bev-location-label-offset-y: 150px;
+    --bev-lines-label-offset-x: -42%;
+    --bev-lines-label-offset-y: -179px;
     --coldstore-red: #d71920;
     --coldstore-red-dark: #8d0f17;
     --coldstore-blue: #0f3a63;
@@ -317,17 +319,17 @@ body.coldstore-body {
     transform-origin: center center;
 }
 
-.bev-location-label {
+.bev-location-label,
+.bev-lines-label {
     position: absolute;
-    top: calc(2.65rem + var(--bev-location-label-offset-y));
-    left: calc(50% + var(--bev-location-label-offset-x));
     z-index: 2;
     display: inline-flex;
     align-items: center;
     gap: 1rem;
     width: max-content;
     max-width: calc(100% - 1.5rem);
-    transform: translateX(-50%) rotate(180deg);
+    transform: translateX(-50%) rotate(var(--bev-label-rotation, 180deg));
+    transform-origin: center center;
     color: #4169E1;
     font-size: clamp(1rem, 2.8vw, 1.5rem);
     font-weight: 700;
@@ -336,8 +338,22 @@ body.coldstore-body {
     pointer-events: none;
 }
 
+.bev-location-label {
+    top: calc(2.65rem + var(--bev-location-label-offset-y));
+    left: calc(50% + var(--bev-location-label-offset-x));
+    --bev-label-rotation: 180deg;
+}
+
+.bev-lines-label {
+    top: calc(50% + var(--bev-lines-label-offset-y));
+    left: calc(50% + var(--bev-lines-label-offset-x));
+    --bev-label-rotation: 270deg;
+}
+
 .bev-location-label::before,
-.bev-location-label::after {
+.bev-location-label::after,
+.bev-lines-label::before,
+.bev-lines-label::after {
     content: '↑';
     display: inline-block;
     color: currentColor;
@@ -345,6 +361,18 @@ body.coldstore-body {
     font-size: clamp(1.1rem, 4vw, 3.05rem);
     font-weight: 800;
     line-height: 1;
+}
+
+.bev-location-label::before,
+.bev-location-label::after,
+.bev-lines-label::before,
+.bev-lines-label::after {
+    content: '\2191';
+}
+
+.bev-location-label::before,
+.bev-location-label::after {
+    transform: rotate(180deg);
 }
 
 .track-map {
@@ -512,6 +540,8 @@ body.coldstore-body {
     :root {
         --bev-location-label-offset-x: 5%;
         --bev-location-label-offset-y: 0px;
+        --bev-lines-label-offset-x: -40%;
+        --bev-lines-label-offset-y: -55px;
     }
 
     .stats-grid,
@@ -535,6 +565,26 @@ body.coldstore-body {
 
     .hero-banner__meta {
         justify-content: flex-start;
+    }
+
+    .bev-lines-label {
+        gap: 0.1rem;
+        font-size: 0.85rem;
+    }
+
+    .bev-location-label {
+        gap: 0.1rem;
+        font-size: 0.85rem;
+    }
+
+    .bev-lines-label::before,
+    .bev-lines-label::after {
+        font-size: 1.0rem;
+    }
+
+    .bev-location-label::before,
+    .bev-location-label::after {
+        font-size: 1.0rem;
     }
 
     .detail-grid {

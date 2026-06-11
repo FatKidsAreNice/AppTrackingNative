@@ -91,6 +91,7 @@
                     </div>
                     <div class="bev-stage">
                         <span class="bev-location-label">Kochkammer</span>
+                        <span class="bev-lines-label">Linien</span>
                         <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="track-map" data-track-map></svg>
                     </div>
                 </div>
