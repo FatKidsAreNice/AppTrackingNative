@@ -21,15 +21,60 @@ class ColdstoreDashboardController extends Controller
     public function index(): View
     {
         $defaultLine = $this->lineWorkplaceMapper->defaultLine();
+        $jobsDataSource = (string) config('coldstore.jobs.data_source', 'local');
+        $jobsApi = [
+            'dataSource' => $jobsDataSource,
+            'baseUrl' => $this->normalizedJobsRemoteApiBaseUrl(),
+            'jobsPath' => (string) config('coldstore.jobs.jobs_path', '/api/coldstore/jobs'),
+        ];
 
         return view('coldstore.dashboard', [
             'initialOverview' => $this->coldstoreApiService->fetchOverview(),
             'jobs' => $this->coldstoreJobRepository->all(),
-            'initialJobs' => $this->jobMatchingService->payloadForLine($defaultLine),
+            'initialJobs' => $jobsDataSource === 'remote_api'
+                ? $this->remoteApiInitialJobsPayload($defaultLine)
+                : $this->jobMatchingService->payloadForLine($defaultLine),
             'jobLines' => $this->lineWorkplaceMapper->all(),
-            'jobsEndpoint' => route('api.coldstore.jobs', absolute: false),
+            'jobsApi' => $jobsApi,
             'pollIntervalMs' => config('coldstore.poll_interval_seconds') * 1000,
         ]);
+    }
+
+    /**
+     * @return array{
+     *     selected_line: int,
+     *     arbeitsplatz_nr: int,
+     *     order: null,
+     *     matching_uids: array<int, mixed>,
+     *     meta: array{
+     *         source_mode: string,
+     *         loading: bool
+     *     }
+     * }
+     */
+    private function remoteApiInitialJobsPayload(int $defaultLine): array
+    {
+        return [
+            'selected_line' => $defaultLine,
+            'arbeitsplatz_nr' => $this->lineWorkplaceMapper->workplaceNumberForLine($defaultLine),
+            'order' => null,
+            'matching_uids' => [],
+            'meta' => [
+                'source_mode' => 'remote_api',
+                'loading' => true,
+            ],
+        ];
+    }
+
+    private function normalizedJobsRemoteApiBaseUrl(): ?string
+    {
+        $baseUrl = trim((string) config('coldstore.jobs.remote_api_base_url', ''));
+
+        if ($baseUrl === '') {
+            return null;
+        }
+
+        return rtrim($baseUrl, '/');
     }
 
     public function scanner(): View

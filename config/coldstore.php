@@ -15,6 +15,9 @@ return [
     ],
     'jobs' => [
         'default_selected_line' => (int) env('COLDSTORE_JOBS_DEFAULT_LINE', 6),
+        'data_source' => env('COLDSTORE_JOBS_DATA_SOURCE', 'local'),
+        'remote_api_base_url' => env('COLDSTORE_REMOTE_API_BASE_URL'),
+        'jobs_path' => env('COLDSTORE_JOBS_PATH', '/api/coldstore/jobs'),
         'production_orders' => [
             'source' => env('COLDSTORE_PRODUCTION_ORDER_SOURCE', 'mock'),
             'sqlsrv_connection' => env('COLDSTORE_JOBS_SQLSRV_CONNECTION', 'coldstore_sqlsrv'),

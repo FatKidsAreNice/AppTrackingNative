@@ -8,7 +8,6 @@
         data-coldstore-dashboard
         data-poll-interval="{{ $pollIntervalMs }}"
         data-overview-endpoint="{{ route('api.coldstore.overview', absolute: false) }}"
-        data-jobs-endpoint="{{ $jobsEndpoint }}"
     >
         <section class="hero-banner">
             <div class="hero-banner__content">
@@ -43,6 +42,7 @@
         <section class="jobs-panel">
             <article class="panel-card">
                 @php($initialOrder = $initialJobs['order'])
+                @php($isJobsRemoteApiLoading = (bool) data_get($initialJobs, 'meta.loading', false))
                 <div class="panel-card__header">
                     <div>
                         <p class="panel-card__eyebrow">Jobs</p>
@@ -84,7 +84,12 @@
                 </div>
 
                 <div class="job-order-card" data-job-order>
-                    @if ($initialOrder)
+                    @if ($isJobsRemoteApiLoading)
+                        <div class="job-order-card__empty">
+                            <p class="panel-card__eyebrow">Nächster Auftrag</p>
+                            <p>Jobs werden geladen ...</p>
+                        </div>
+                    @elseif ($initialOrder)
                         <div class="job-order-card__header">
                             <div>
                                 <p class="panel-card__eyebrow">Nächster Auftrag</p>
@@ -107,44 +112,55 @@
                     @else
                         <div class="job-order-card__empty">
                             <p class="panel-card__eyebrow">Nächster Auftrag</p>
-                            <p>Fuer diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.</p>
+                            <p>Für diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.</p>
                         </div>
                     @endif
                 </div>
 
                 <div class="jobs-list" data-jobs-list>
-                    @forelse ($initialJobs['matching_uids'] as $matchingUid)
-                        <button
-                            class="job-row {{ $matchingUid['has_track_assignment'] ? '' : 'job-row--muted' }}"
-                            type="button"
-                            data-select-job-uid="{{ $matchingUid['uid'] }}"
-                        >
-                            <span>
-                                <strong>{{ $matchingUid['uid'] }}</strong>
-                                <small>PEText1 {{ $matchingUid['etikinterface_pe_text1'] }}</small>
-                            </span>
-                            <span>
-                                <strong>{{ $matchingUid['track_id'] ? 'Track '.$matchingUid['track_id'] : 'Kein Track' }}</strong>
-                                <small>{{ $matchingUid['state'] }}</small>
-                            </span>
-                        </button>
-                    @empty
+                    @if ($isJobsRemoteApiLoading)
                         <article class="job-row job-row--empty">
                             <span>
-                                <strong>Keine passende UID</strong>
-                                <small>Im aktuellen Kuehlhausbestand wurde noch kein Treffer gefunden.</small>
+                                <strong>Jobs werden geladen ...</strong>
+                                <small>Die Auftragsdaten werden vom Backend abgerufen.</small>
                             </span>
                         </article>
-                    @endforelse
+                    @else
+                        @forelse ($initialJobs['matching_uids'] as $matchingUid)
+                            <button
+                                class="job-row {{ $matchingUid['has_track_assignment'] ? '' : 'job-row--muted' }}"
+                                type="button"
+                                data-select-job-uid="{{ $matchingUid['uid'] }}"
+                            >
+                                <span>
+                                    <strong>{{ $matchingUid['uid'] }}</strong>
+                                    <small>PEText1 {{ $matchingUid['etikinterface_pe_text1'] }}</small>
+                                </span>
+                                <span>
+                                    <strong>{{ $matchingUid['track_id'] ? 'Track '.$matchingUid['track_id'] : 'Kein Track' }}</strong>
+                                    <small>{{ $matchingUid['state'] }}</small>
+                                </span>
+                            </button>
+                        @empty
+                            <article class="job-row job-row--empty">
+                                <span>
+                                    <strong>Keine passende UID</strong>
+                                    <small>Im aktuellen Kühlhausbestand wurde noch kein Treffer gefunden.</small>
+                                </span>
+                            </article>
+                        @endforelse
+                    @endif
                 </div>
 
                 <p class="panel-card__muted jobs-panel__status" data-job-status>
-                    @if (! $initialOrder)
-                        Fuer diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.
+                    @if ($isJobsRemoteApiLoading)
+                        Jobs werden geladen ...
+                    @elseif (! $initialOrder)
+                        Für diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.
                     @elseif (count($initialJobs['matching_uids']) === 0)
-                        Kein passender UID-Bestand im Kuehlhaus gefunden.
+                        Kein passender UID-Bestand im Kühlhaus gefunden.
                     @else
-                        {{ count($initialJobs['matching_uids']) }} passende UID(s) im Kuehlhaus gefunden.
+                        {{ count($initialJobs['matching_uids']) }} passende UID(s) im Kühlhaus gefunden.
                     @endif
                 </p>
             </article>
@@ -213,5 +229,6 @@
         window.coldstoreDashboardJobs = @json($jobs);
         window.coldstoreDashboardInitialJobs = @json($initialJobs);
         window.coldstoreDashboardJobLines = @json($jobLines);
+        window.coldstoreDashboardJobsApi = @json($jobsApi);
     </script>
 @endsection

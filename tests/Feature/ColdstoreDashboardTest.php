@@ -3,8 +3,14 @@
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 
-it('renders the overview dashboard', function () {
+it('defines local as the default jobs data source in config', function () {
+    expect(file_get_contents(config_path('coldstore.php')))
+        ->toContain("env('COLDSTORE_JOBS_DATA_SOURCE', 'local')");
+});
+
+it('renders the overview dashboard with local jobs api config', function () {
     Config::set('coldstore.remote.base_url', null);
+    Config::set('coldstore.jobs.data_source', 'local');
     Config::set('coldstore.jobs.production_orders.source', 'mock');
 
     $response = $this->get(route('coldstore.dashboard'));
@@ -17,11 +23,29 @@ it('renders the overview dashboard', function () {
         ->assertSee('Linie 6')
         ->assertSee('Arbeitsplatz')
         ->assertSee('Required PEText1')
-        ->assertSee('/api/coldstore/jobs', false)
+        ->assertSee('"dataSource":"local"', false)
+        ->assertSee('"jobsPath":"\\/api\\/coldstore\\/jobs"', false)
         ->assertDontSee('Bewegung aktiv')
         ->assertDontSee('track-map--rotated', false)
         ->assertSee('Kühlhaus')
         ->assertSee('BEV-Quelle');
+});
+
+it('renders a neutral loading jobs state for remote api mode', function () {
+    Config::set('coldstore.remote.base_url', null);
+    Config::set('coldstore.jobs.data_source', 'remote_api');
+    Config::set('coldstore.jobs.remote_api_base_url', 'http://10.10.123.66:8000');
+    Config::set('coldstore.jobs.production_orders.source', 'sqlsrv');
+
+    $response = $this->get(route('coldstore.dashboard'));
+
+    $response->assertSuccessful()
+        ->assertSee('"dataSource":"remote_api"', false)
+        ->assertSee('"baseUrl":"http:\\/\\/10.10.123.66:8000"', false)
+        ->assertSee('"jobsPath":"\\/api\\/coldstore\\/jobs"', false)
+        ->assertSee('Jobs werden geladen ...')
+        ->assertDontSee('UID-L6-A')
+        ->assertDontSee('4711-06');
 });
 
 it('renders the scanner module', function () {
@@ -49,6 +73,7 @@ it('renders the settings page', function () {
 it('embeds map rotation config for the frontend dashboard', function () {
     Config::set('coldstore.remote.base_url', 'http://coldstore.test');
     Config::set('coldstore.remote.overview_path', '/overview');
+    Config::set('coldstore.jobs.data_source', 'local');
     Config::set('coldstore.jobs.production_orders.source', 'mock');
 
     Http::fake([

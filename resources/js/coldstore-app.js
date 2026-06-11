@@ -17,16 +17,21 @@ function bootDashboard() {
     }
 
     const overviewEndpoint = root.dataset.overviewEndpoint;
-    const jobsEndpoint = root.dataset.jobsEndpoint;
     const pollInterval = Number(root.dataset.pollInterval ?? '5000');
     const initialOverview = window.coldstoreDashboardConfig ?? {};
     const initialJobs = window.coldstoreDashboardInitialJobs ?? {};
+    const jobsApi = window.coldstoreDashboardJobsApi ?? {
+        dataSource: 'local',
+        baseUrl: null,
+        jobsPath: '/api/coldstore/jobs',
+    };
     const initialFrameId = initialOverview.meta?.frame_id ?? 'coldstore-map';
     const state = {
         overview: initialOverview,
         jobsData: initialJobs,
         jobLines: window.coldstoreDashboardJobLines ?? [],
         jobsError: null,
+        jobsLoading: Boolean(initialJobs.meta?.loading),
         filter: '',
         selectedMatchingUid: null,
         selectedTrackId: initialOverview.overview?.selected_track_id ?? null,
@@ -108,8 +113,51 @@ function bootDashboard() {
         return state.jobLines.find((line) => line.line === Number(state.jobsData.selected_line)) ?? null;
     }
 
+    function jobsWorkplaceNumberForLine(selectedLine) {
+        return state.jobLines.find((line) => line.line === Number(selectedLine))?.workplace_number ?? null;
+    }
+
     function findSelectedMatchingUid() {
         return (state.jobsData.matching_uids ?? []).find((entry) => entry.uid === state.selectedMatchingUid) ?? null;
+    }
+
+    function buildJobsUrl(selectedLine) {
+        const jobsPath = jobsApi.jobsPath ?? '/api/coldstore/jobs';
+
+        if (jobsApi.dataSource === 'remote_api') {
+            if (!jobsApi.baseUrl) {
+                throw new Error('Backend nicht erreichbar');
+            }
+
+            return `${jobsApi.baseUrl}${jobsPath}?line=${selectedLine}`;
+        }
+
+        return `${jobsPath}?line=${selectedLine}`;
+    }
+
+    function buildLoadingJobsPayload(selectedLine) {
+        return {
+            selected_line: selectedLine,
+            arbeitsplatz_nr: jobsWorkplaceNumberForLine(selectedLine),
+            order: null,
+            matching_uids: [],
+            meta: {
+                source_mode: jobsApi.dataSource === 'remote_api' ? 'remote_api' : 'local',
+                loading: true,
+            },
+        };
+    }
+
+    function buildEmptyJobsPayload(selectedLine) {
+        return {
+            selected_line: selectedLine,
+            arbeitsplatz_nr: jobsWorkplaceNumberForLine(selectedLine),
+            order: null,
+            matching_uids: [],
+            meta: {
+                source_mode: jobsApi.dataSource === 'remote_api' ? 'remote_api' : 'local',
+            },
+        };
     }
 
     function syncTrackSessionSeenAt() {
@@ -192,10 +240,12 @@ function bootDashboard() {
 
     async function refreshJobs(selectedLine) {
         state.jobsError = null;
-        jobStatus.textContent = 'Jobs werden geladen ...';
+        state.jobsLoading = true;
+        state.jobsData = buildLoadingJobsPayload(selectedLine);
+        render();
 
         try {
-            const response = await fetch(`${jobsEndpoint}?selected_line=${selectedLine}`, {
+            const response = await fetch(buildJobsUrl(selectedLine), {
                 headers: {
                     Accept: 'application/json',
                 },
@@ -206,12 +256,18 @@ function bootDashboard() {
             }
 
             state.jobsData = await response.json();
+            state.jobsLoading = false;
             state.selectedMatchingUid = null;
             setLinePickerOpen(false);
             render();
         } catch (error) {
-            state.jobsError = error.message;
-            renderJobStatus();
+            console.error('Jobs fetch failed.', error);
+            state.jobsLoading = false;
+            state.jobsData = buildEmptyJobsPayload(selectedLine);
+            state.jobsError = jobsApi.dataSource === 'remote_api'
+                ? 'Backend nicht erreichbar'
+                : (error.message ?? 'Jobs konnten nicht geladen werden.');
+            render();
         }
     }
 
@@ -390,11 +446,22 @@ function bootDashboard() {
             return;
         }
 
+        if (state.jobsLoading) {
+            jobOrder.innerHTML = `
+                <div class="job-order-card__empty">
+                    <p class="panel-card__eyebrow">Nächster Auftrag</p>
+                    <p>Jobs werden geladen ...</p>
+                </div>
+            `;
+
+            return;
+        }
+
         if (!order) {
             jobOrder.innerHTML = `
                 <div class="job-order-card__empty">
                     <p class="panel-card__eyebrow">Nächster Auftrag</p>
-                    <p>Fuer diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.</p>
+                    <p>Für diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.</p>
                 </div>
             `;
 
@@ -425,6 +492,12 @@ function bootDashboard() {
     }
 
     function renderJobStatus() {
+        if (state.jobsLoading) {
+            jobStatus.textContent = 'Jobs werden geladen ...';
+
+            return;
+        }
+
         if (state.jobsError) {
             jobStatus.textContent = state.jobsError;
 
@@ -432,7 +505,7 @@ function bootDashboard() {
         }
 
         if (!state.jobsData.order) {
-            jobStatus.textContent = 'Fuer diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.';
+            jobStatus.textContent = 'Für diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.';
 
             return;
         }
@@ -464,6 +537,20 @@ function bootDashboard() {
 
     function renderJobs() {
         const matchingUids = state.jobsData.matching_uids ?? [];
+
+        if (state.jobsLoading) {
+            jobsList.innerHTML = `
+                <article class="job-row job-row--empty">
+                    <span>
+                        <strong>Jobs werden geladen ...</strong>
+                        <small>Die Auftragsdaten werden vom Backend abgerufen.</small>
+                    </span>
+                </article>
+            `;
+            renderJobStatus();
+
+            return;
+        }
 
         if (matchingUids.length === 0) {
             jobsList.innerHTML = `
@@ -575,7 +662,7 @@ function bootDashboard() {
                             <small>Position x=${track.x.toFixed(2)}, y=${track.y.toFixed(2)}</small>
                         </span>
                         <span>
-                            <strong>${selected ? 'Ausgewaehlt' : 'Track'}</strong>
+                            <strong>${selected ? 'Ausgewählt' : 'Track'}</strong>
                             <small>${track.barcode_id || 'Kein Barcode'}</small>
                         </span>
                     </button>
@@ -614,7 +701,7 @@ function bootDashboard() {
             detailTitle.textContent = 'Keine Auswahl';
             detailList.innerHTML = `
                 <dt>Hinweis</dt>
-                <dd>Bitte einen Track aus Liste oder Karte auswaehlen.</dd>
+                <dd>Bitte einen Track aus Liste oder Karte auswählen.</dd>
             `;
 
             return;
@@ -667,6 +754,11 @@ function bootDashboard() {
     syncMapBackgroundCache();
     syncTrackSessionSeenAt();
     render();
+
+    if (jobsApi.dataSource === 'remote_api') {
+        void refreshJobs(Number(state.jobsData.selected_line));
+    }
+
     window.setInterval(() => {
         if (findSelectedTrack()) {
             renderDetails();
@@ -712,7 +804,7 @@ function bootScanner() {
                     <article class="track-row">
                         <span>
                             <strong>${entry.barcode_id}</strong>
-                            <small>${entry.direction} Â· ${new Date(entry.scanned_at).toLocaleString('de-DE')}</small>
+                            <small>${entry.direction} · ${new Date(entry.scanned_at).toLocaleString('de-DE')}</small>
                         </span>
                         <span>
                             <strong>${entry.status}</strong>
@@ -822,7 +914,7 @@ function bootScanner() {
         const photoPathValue = typeof payload === 'string' ? payload : parsedPayload.path ?? '';
 
         if (!photoPathValue) {
-            cameraStatus.textContent = 'Foto aufgenommen, aber ohne Dateipfad zurueckgemeldet.';
+            cameraStatus.textContent = 'Foto aufgenommen, aber ohne Dateipfad zurückgemeldet.';
 
             return;
         }
@@ -850,14 +942,14 @@ function bootScanner() {
     });
 
     openCameraButton?.addEventListener('click', async () => {
-        cameraStatus.textContent = 'Oeffne Kamera fuer den Geraetetest ...';
+        cameraStatus.textContent = 'Öffne Kamera für den Gerätetest ...';
         updateCameraPreview();
 
         try {
             await Camera.getPhoto()
                 .id(scannerIdInput.value.trim() || window.coldstoreScannerConfig?.scannerId || 'coldstore-entry-01');
         } catch (error) {
-            cameraStatus.textContent = 'Kamera konnte nicht gestartet werden. Im Browser ausserhalb der App ist das normal. Nutze alternativ das Eingabefeld.';
+            cameraStatus.textContent = 'Kamera konnte nicht gestartet werden. Im Browser außerhalb der App ist das normal. Nutze alternativ das Eingabefeld.';
         }
     });
 
