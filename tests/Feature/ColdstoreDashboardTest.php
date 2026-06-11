@@ -13,9 +13,13 @@ it('renders the overview dashboard', function () {
         ->assertSee('Jobs')
         ->assertSee('Kochkammer')
         ->assertSee('Linie 1')
+        ->assertSee('Linie 6')
+        ->assertSee('Arbeitsplatz')
+        ->assertSee('Required PEText1')
+        ->assertSee('/api/coldstore/jobs', false)
         ->assertDontSee('Bewegung aktiv')
         ->assertDontSee('track-map--rotated', false)
-        ->assertSee('Kühlhaus')
+        ->assertSee('Kuehlhaus')
         ->assertSee('BEV-Quelle');
 });
 

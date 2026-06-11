@@ -17,14 +17,18 @@ function bootDashboard() {
     }
 
     const overviewEndpoint = root.dataset.overviewEndpoint;
+    const jobsEndpoint = root.dataset.jobsEndpoint;
     const pollInterval = Number(root.dataset.pollInterval ?? '5000');
     const initialOverview = window.coldstoreDashboardConfig ?? {};
+    const initialJobs = window.coldstoreDashboardInitialJobs ?? {};
     const initialFrameId = initialOverview.meta?.frame_id ?? 'coldstore-map';
     const state = {
         overview: initialOverview,
-        jobs: window.coldstoreDashboardJobs ?? [],
+        jobsData: initialJobs,
+        jobLines: window.coldstoreDashboardJobLines ?? [],
+        jobsError: null,
         filter: '',
-        selectedJobUid: null,
+        selectedMatchingUid: null,
         selectedTrackId: initialOverview.overview?.selected_track_id ?? null,
         trackSessionSeenAt: {},
         mapBackgroundCache: {
@@ -36,6 +40,14 @@ function bootDashboard() {
     };
 
     const jobsList = root.querySelector('[data-jobs-list]');
+    const jobOrder = root.querySelector('[data-job-order]');
+    const selectedLineLabel = root.querySelector('[data-selected-line-label]');
+    const selectedLineValue = root.querySelector('[data-job-selected-line]');
+    const selectedWorkplace = root.querySelector('[data-job-workplace]');
+    const selectedJobSource = root.querySelector('[data-job-source]');
+    const linePicker = root.querySelector('[data-line-picker]');
+    const linePickerToggle = root.querySelector('[data-toggle-line-picker]');
+    const linePickerMenu = root.querySelector('[data-line-picker-menu]');
     const trackList = root.querySelector('[data-track-list]');
     const detailList = root.querySelector('[data-track-detail]');
     const sectionList = root.querySelector('[data-section-list]');
@@ -60,8 +72,42 @@ function bootDashboard() {
         await refreshOverview();
     });
 
+    linePickerToggle?.addEventListener('click', () => {
+        const expanded = linePickerToggle.getAttribute('aria-expanded') === 'true';
+
+        setLinePickerOpen(!expanded);
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!linePicker?.contains(event.target)) {
+            setLinePickerOpen(false);
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            setLinePickerOpen(false);
+        }
+    });
+
+    function setLinePickerOpen(isOpen) {
+        linePickerToggle?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+        if (linePickerMenu) {
+            linePickerMenu.hidden = !isOpen;
+        }
+    }
+
     function activeFrameId(overview = state.overview) {
         return overview.meta?.frame_id ?? 'coldstore-map';
+    }
+
+    function selectedLineOption() {
+        return state.jobLines.find((line) => line.line === Number(state.jobsData.selected_line)) ?? null;
+    }
+
+    function findSelectedMatchingUid() {
+        return (state.jobsData.matching_uids ?? []).find((entry) => entry.uid === state.selectedMatchingUid) ?? null;
     }
 
     function syncTrackSessionSeenAt() {
@@ -130,17 +176,40 @@ function bootDashboard() {
             syncMapBackgroundCache();
             syncTrackSessionSeenAt();
 
-            if (!state.selectedJobUid && !findSelectedTrack()) {
+            if (!findSelectedTrack()) {
                 state.selectedTrackId = state.overview.overview?.selected_track_id ?? state.overview.tracks?.[0]?.track_id ?? null;
             }
 
-            syncSelectedJobToTrack();
-
             render();
         } catch (error) {
-            syncState.textContent = error.message;
+            subtitle.textContent = error.message;
         } finally {
             refreshButton?.removeAttribute('disabled');
+        }
+    }
+
+    async function refreshJobs(selectedLine) {
+        state.jobsError = null;
+        jobStatus.textContent = 'Jobs werden geladen ...';
+
+        try {
+            const response = await fetch(`${jobsEndpoint}?selected_line=${selectedLine}`, {
+                headers: {
+                    Accept: 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Jobs konnten nicht geladen werden.');
+            }
+
+            state.jobsData = await response.json();
+            state.selectedMatchingUid = null;
+            setLinePickerOpen(false);
+            render();
+        } catch (error) {
+            state.jobsError = error.message;
+            renderJobStatus();
         }
     }
 
@@ -170,20 +239,6 @@ function bootDashboard() {
         return (state.overview.tracks ?? []).find((track) => track.track_id === Number(state.selectedTrackId)) ?? null;
     }
 
-    function findTrackForJob(job) {
-        if (!job) {
-            return null;
-        }
-
-        return (state.overview.tracks ?? []).find((track) => {
-            return (
-                String(track.track_id) === String(job.uid)
-                || String(track.display_id) === String(job.uid)
-                || String(track.barcode_id) === String(job.uid)
-            );
-        }) ?? null;
-    }
-
     function setTrackFilter(value) {
         state.filter = value.toLowerCase();
 
@@ -192,35 +247,17 @@ function bootDashboard() {
         }
     }
 
-    function selectJob(job) {
-        state.selectedJobUid = job.uid;
-        setTrackFilter(job.uid);
+    function selectMatchingUid(uid) {
+        state.selectedMatchingUid = uid;
 
-        const matchingTrack = findTrackForJob(job);
+        const selectedUid = findSelectedMatchingUid();
 
-        if (matchingTrack) {
-            state.selectedTrackId = matchingTrack.track_id;
-        } else {
-            state.selectedTrackId = null;
+        if (selectedUid?.track_id) {
+            state.selectedTrackId = selectedUid.track_id;
+            setTrackFilter(String(selectedUid.track_id));
         }
 
         render();
-    }
-
-    function syncSelectedJobToTrack() {
-        const selectedJob = state.jobs.find((job) => job.uid === state.selectedJobUid);
-
-        if (!selectedJob) {
-            return;
-        }
-
-        const matchingTrack = findTrackForJob(selectedJob);
-
-        if (matchingTrack) {
-            state.selectedTrackId = matchingTrack.track_id;
-        } else {
-            state.selectedTrackId = null;
-        }
     }
 
     function mapPoint(x, y) {
@@ -291,6 +328,188 @@ function bootDashboard() {
         return '#d71920';
     }
 
+    function renderLinePicker() {
+        const activeLine = Number(state.jobsData.selected_line);
+        const activeLineOption = selectedLineOption();
+
+        if (selectedLineLabel) {
+            selectedLineLabel.textContent = activeLineOption?.label ?? `Linie ${activeLine}`;
+        }
+
+        if (!linePickerMenu) {
+            return;
+        }
+
+        linePickerMenu.innerHTML = state.jobLines
+            .map((line) => {
+                const selected = line.line === activeLine;
+
+                return `
+                    <button
+                        class="line-picker__option ${selected ? 'line-picker__option--active' : ''}"
+                        type="button"
+                        data-select-line="${line.line}"
+                    >
+                        <span>${line.label}</span>
+                        <small>AP ${line.workplace_number}</small>
+                    </button>
+                `;
+            })
+            .join('');
+
+        linePickerMenu.querySelectorAll('[data-select-line]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                await refreshJobs(Number(button.dataset.selectLine));
+            });
+        });
+    }
+
+    function renderJobMeta() {
+        const activeLineOption = selectedLineOption();
+        const selectedLine = Number(state.jobsData.selected_line);
+
+        if (selectedLineValue) {
+            selectedLineValue.textContent = activeLineOption?.label ?? `Linie ${selectedLine}`;
+        }
+
+        if (selectedWorkplace) {
+            selectedWorkplace.textContent = String(state.jobsData.arbeitsplatz_nr ?? '-');
+        }
+
+        if (selectedJobSource) {
+            selectedJobSource.textContent = state.jobsData.meta?.source_mode ?? 'unknown';
+        }
+    }
+
+    function renderJobOrder() {
+        const order = state.jobsData.order;
+
+        if (!jobOrder) {
+            return;
+        }
+
+        if (!order) {
+            jobOrder.innerHTML = `
+                <div class="job-order-card__empty">
+                    <p class="panel-card__eyebrow">Naechster Auftrag</p>
+                    <p>Fuer diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.</p>
+                </div>
+            `;
+
+            return;
+        }
+
+        jobOrder.innerHTML = `
+            <div class="job-order-card__header">
+                <div>
+                    <p class="panel-card__eyebrow">Naechster Auftrag</p>
+                    <h3 class="panel-card__title">${order.va_auftragsnr}</h3>
+                </div>
+                <span class="status-pill status-pill--ok">VA_Status ${order.va_status}</span>
+            </div>
+            <dl class="detail-grid detail-grid--compact">
+                <dt>Artikel</dt>
+                <dd>${order.matstamm_maktx}</dd>
+                <dt>MatStamm MatNr</dt>
+                <dd>${order.matstamm_matnr}</dd>
+                <dt>FuellArtNr</dt>
+                <dd>${order.matstamm_fuellartnr}</dd>
+                <dt>Required PEText1</dt>
+                <dd>${order.required_pe_text1}</dd>
+                <dt>Beginn Soll</dt>
+                <dd>${order.va_beginn_soll}</dd>
+            </dl>
+        `;
+    }
+
+    function renderJobStatus() {
+        if (state.jobsError) {
+            jobStatus.textContent = state.jobsError;
+
+            return;
+        }
+
+        if (!state.jobsData.order) {
+            jobStatus.textContent = 'Fuer diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.';
+
+            return;
+        }
+
+        const matchingUids = state.jobsData.matching_uids ?? [];
+
+        if (matchingUids.length === 0) {
+            jobStatus.textContent = 'Kein passender UID-Bestand im Kuehlhaus gefunden.';
+
+            return;
+        }
+
+        const selectedUid = findSelectedMatchingUid();
+
+        if (!selectedUid) {
+            jobStatus.textContent = `${matchingUids.length} passende UID(s) im Kuehlhaus gefunden.`;
+
+            return;
+        }
+
+        if (!selectedUid.track_id) {
+            jobStatus.textContent = `UID ${selectedUid.uid} ist passend, aber aktuell keinem Track zugeordnet.`;
+
+            return;
+        }
+
+        jobStatus.textContent = `UID ${selectedUid.uid} nutzt die bestehende Track-Markierung fuer Track ${selectedUid.track_id}.`;
+    }
+
+    function renderJobs() {
+        const matchingUids = state.jobsData.matching_uids ?? [];
+
+        if (matchingUids.length === 0) {
+            jobsList.innerHTML = `
+                <article class="job-row job-row--empty">
+                    <span>
+                        <strong>Keine passende UID</strong>
+                        <small>Im aktuellen Kuehlhausbestand wurde noch kein Treffer gefunden.</small>
+                    </span>
+                </article>
+            `;
+            renderJobStatus();
+
+            return;
+        }
+
+        jobsList.innerHTML = matchingUids
+            .map((matchingUid) => {
+                const selected = matchingUid.uid === state.selectedMatchingUid;
+                const hasTrackAssignment = Boolean(matchingUid.track_id);
+
+                return `
+                    <button
+                        class="job-row ${selected ? 'job-row--active' : ''} ${hasTrackAssignment ? '' : 'job-row--muted'}"
+                        type="button"
+                        data-select-job-uid="${matchingUid.uid}"
+                    >
+                        <span>
+                            <strong>${matchingUid.uid}</strong>
+                            <small>PEText1 ${matchingUid.etikinterface_pe_text1}</small>
+                        </span>
+                        <span>
+                            <strong>${hasTrackAssignment ? `Track ${matchingUid.track_id}` : 'Kein Track'}</strong>
+                            <small>${matchingUid.state}</small>
+                        </span>
+                    </button>
+                `;
+            })
+            .join('');
+
+        jobsList.querySelectorAll('[data-select-job-uid]').forEach((button) => {
+            button.addEventListener('click', () => {
+                selectMatchingUid(button.dataset.selectJobUid);
+            });
+        });
+
+        renderJobStatus();
+    }
+
     function renderMap() {
         const tracks = state.overview.tracks ?? [];
         const backgroundBase64 = state.overview.map?.background_base64;
@@ -338,53 +557,6 @@ function bootDashboard() {
                 render();
             });
         });
-    }
-
-    function renderJobs() {
-        jobsList.innerHTML = state.jobs
-            .map((job) => {
-                const selected = job.uid === state.selectedJobUid;
-
-                return `
-                    <button class="job-row ${selected ? 'job-row--active' : ''}" type="button" data-select-job="${job.uid}">
-                        <span>
-                            <strong>UID ${job.uid}</strong>
-                            <small>Aeltester Job zuerst</small>
-                        </span>
-                        <span>
-                            <strong>${job.destination}</strong>
-                            <small>Prioritaet ${job.priority}</small>
-                        </span>
-                    </button>
-                `;
-            })
-            .join('');
-
-        jobsList.querySelectorAll('[data-select-job]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const job = state.jobs.find((entry) => entry.uid === button.dataset.selectJob);
-
-                if (!job) {
-                    return;
-                }
-
-                selectJob(job);
-            });
-        });
-
-        const selectedJob = state.jobs.find((job) => job.uid === state.selectedJobUid);
-
-        if (!selectedJob) {
-            jobStatus.textContent = 'Die manuelle Suche bleibt darunter als Fallback verfuegbar.';
-
-            return;
-        }
-
-        const matchingTrack = findTrackForJob(selectedJob);
-
-        jobStatus.textContent = matchingTrack
-            ? `Aktiver Job UID ${selectedJob.uid}: Live-Track ${matchingTrack.display_id} wurde markiert.`
-            : `Aktiver Job UID ${selectedJob.uid}: Noch kein passender Live-Track gefunden, die Suche wurde als Fallback gesetzt.`;
     }
 
     function renderTrackList() {
@@ -472,6 +644,9 @@ function bootDashboard() {
 
     function render() {
         renderMeta();
+        renderLinePicker();
+        renderJobMeta();
+        renderJobOrder();
         renderJobs();
         renderMap();
         renderTrackList();
@@ -527,7 +702,7 @@ function bootScanner() {
                     <article class="track-row">
                         <span>
                             <strong>${entry.barcode_id}</strong>
-                            <small>${entry.direction} · ${new Date(entry.scanned_at).toLocaleString('de-DE')}</small>
+                            <small>${entry.direction} Â· ${new Date(entry.scanned_at).toLocaleString('de-DE')}</small>
                         </span>
                         <span>
                             <strong>${entry.status}</strong>

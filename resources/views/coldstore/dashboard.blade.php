@@ -8,6 +8,7 @@
         data-coldstore-dashboard
         data-poll-interval="{{ $pollIntervalMs }}"
         data-overview-endpoint="{{ route('api.coldstore.overview', absolute: false) }}"
+        data-jobs-endpoint="{{ $jobsEndpoint }}"
     >
         <section class="hero-banner">
             <div class="hero-banner__content">
@@ -41,29 +42,110 @@
 
         <section class="jobs-panel">
             <article class="panel-card">
+                @php($initialOrder = $initialJobs['order'])
                 <div class="panel-card__header">
                     <div>
                         <p class="panel-card__eyebrow">Jobs</p>
-                        <h2 class="panel-card__title">Vorbereitete Auftäege</h2>
+                        <h2 class="panel-card__title">Vorbereitete Auftraege</h2>
                     </div>
-                    <p class="panel-card__muted">Nach Dringlichkeit sortiert</p>
+                    <div class="line-picker" data-line-picker>
+                        <button class="line-picker__toggle" type="button" data-toggle-line-picker aria-expanded="false">
+                            <span class="line-picker__label">Linie</span>
+                            <strong data-selected-line-label>Linie {{ $initialJobs['selected_line'] }}</strong>
+                        </button>
+                        <div class="line-picker__menu" data-line-picker-menu hidden>
+                            @foreach ($jobLines as $line)
+                                <button
+                                    class="line-picker__option {{ $line['line'] === $initialJobs['selected_line'] ? 'line-picker__option--active' : '' }}"
+                                    type="button"
+                                    data-select-line="{{ $line['line'] }}"
+                                >
+                                    <span>{{ $line['label'] }}</span>
+                                    <small>AP {{ $line['workplace_number'] }}</small>
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
+
+                <div class="jobs-panel__meta" data-job-summary>
+                    <article class="jobs-stat">
+                        <span class="jobs-stat__label">Ausgewaehlte Linie</span>
+                        <strong class="jobs-stat__value" data-job-selected-line>Linie {{ $initialJobs['selected_line'] }}</strong>
+                    </article>
+                    <article class="jobs-stat">
+                        <span class="jobs-stat__label">Arbeitsplatz</span>
+                        <strong class="jobs-stat__value" data-job-workplace>{{ $initialJobs['arbeitsplatz_nr'] }}</strong>
+                    </article>
+                    <article class="jobs-stat">
+                        <span class="jobs-stat__label">Datenquelle</span>
+                        <strong class="jobs-stat__value" data-job-source>{{ $initialJobs['meta']['source_mode'] }}</strong>
+                    </article>
+                </div>
+
+                <div class="job-order-card" data-job-order>
+                    @if ($initialOrder)
+                        <div class="job-order-card__header">
+                            <div>
+                                <p class="panel-card__eyebrow">Naechster Auftrag</p>
+                                <h3 class="panel-card__title">{{ $initialOrder['va_auftragsnr'] }}</h3>
+                            </div>
+                            <span class="status-pill status-pill--ok">VA_Status {{ $initialOrder['va_status'] }}</span>
+                        </div>
+                        <dl class="detail-grid detail-grid--compact">
+                            <dt>Artikel</dt>
+                            <dd>{{ $initialOrder['matstamm_maktx'] }}</dd>
+                            <dt>MatStamm MatNr</dt>
+                            <dd>{{ $initialOrder['matstamm_matnr'] }}</dd>
+                            <dt>FuellArtNr</dt>
+                            <dd>{{ $initialOrder['matstamm_fuellartnr'] }}</dd>
+                            <dt>Required PEText1</dt>
+                            <dd>{{ $initialOrder['required_pe_text1'] }}</dd>
+                            <dt>Beginn Soll</dt>
+                            <dd>{{ $initialOrder['va_beginn_soll'] }}</dd>
+                        </dl>
+                    @else
+                        <div class="job-order-card__empty">
+                            <p class="panel-card__eyebrow">Naechster Auftrag</p>
+                            <p>Fuer diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.</p>
+                        </div>
+                    @endif
+                </div>
+
                 <div class="jobs-list" data-jobs-list>
-                    @foreach ($jobs as $job)
-                        <button class="job-row" type="button" data-select-job="{{ $job['uid'] }}">
+                    @forelse ($initialJobs['matching_uids'] as $matchingUid)
+                        <button
+                            class="job-row {{ $matchingUid['has_track_assignment'] ? '' : 'job-row--muted' }}"
+                            type="button"
+                            data-select-job-uid="{{ $matchingUid['uid'] }}"
+                        >
                             <span>
-                                <strong>UID {{ $job['uid'] }}</strong>
-                                <small>Ältester Job zuerst</small>
+                                <strong>{{ $matchingUid['uid'] }}</strong>
+                                <small>PEText1 {{ $matchingUid['etikinterface_pe_text1'] }}</small>
                             </span>
                             <span>
-                                <strong>{{ $job['destination'] }}</strong>
-                                <small>Priorität {{ $job['priority'] }}</small>
+                                <strong>{{ $matchingUid['track_id'] ? 'Track '.$matchingUid['track_id'] : 'Kein Track' }}</strong>
+                                <small>{{ $matchingUid['state'] }}</small>
                             </span>
                         </button>
-                    @endforeach
+                    @empty
+                        <article class="job-row job-row--empty">
+                            <span>
+                                <strong>Keine passende UID</strong>
+                                <small>Im aktuellen Kuehlhausbestand wurde noch kein Treffer gefunden.</small>
+                            </span>
+                        </article>
+                    @endforelse
                 </div>
+
                 <p class="panel-card__muted jobs-panel__status" data-job-status>
-                    Job-Auswahl verknuepft bei Treffer die bestehende Track-Markierung.
+                    @if (! $initialOrder)
+                        Fuer diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.
+                    @elseif (count($initialJobs['matching_uids']) === 0)
+                        Kein passender UID-Bestand im Kuehlhaus gefunden.
+                    @else
+                        {{ count($initialJobs['matching_uids']) }} passende UID(s) im Kuehlhaus gefunden.
+                    @endif
                 </p>
             </article>
         </section>
@@ -72,7 +154,7 @@
             <article class="panel-card panel-card--map">
                 <div class="panel-card__header">
                     <div>
-                        <p class="panel-card__eyebrow">Kühlhaus</p>
+                        <p class="panel-card__eyebrow">Kuehlhaus</p>
                         <h2 class="panel-card__title">{{ $initialOverview['coldstore']['name'] }}</h2>
                     </div>
                     <p class="panel-card__muted" data-updated-at>{{ $initialOverview['meta']['updated_at'] }}</p>
@@ -117,7 +199,7 @@
             <article class="panel-card panel-card--wide">
                 <div class="panel-card__header">
                     <div>
-                        <p class="panel-card__eyebrow">Kühlhaus-Status</p>
+                        <p class="panel-card__eyebrow">Kuehlhaus-Status</p>
                         <h2 class="panel-card__title">Bereiche</h2>
                     </div>
                 </div>
@@ -129,5 +211,7 @@
     <script>
         window.coldstoreDashboardConfig = @json($initialOverview);
         window.coldstoreDashboardJobs = @json($jobs);
+        window.coldstoreDashboardInitialJobs = @json($initialJobs);
+        window.coldstoreDashboardJobLines = @json($jobLines);
     </script>
 @endsection
