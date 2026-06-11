@@ -13,6 +13,7 @@
 :root {
     --bev-map-offset-x: 3%;
     --bev-track-offset-y: 2;
+    --bev-stage-rotation-deg: 180deg;
     --bev-location-label-offset-x: 5%;
     --bev-location-label-offset-y: 150px;
     --coldstore-red: #d71920;
@@ -296,6 +297,26 @@ body.coldstore-body {
     background: var(--coldstore-ice);
 }
 
+.bev-map-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 4;
+    width: 100%;
+    border-radius: 0 0 1rem 1rem;
+    padding: 0.85rem 0.95rem;
+    background: #d9e8da;
+    box-shadow: 0 10px 24px rgb(47 79 53 / 0.12);
+}
+
+.bev-stage {
+    position: relative;
+    z-index: 1;
+    transform: rotate(var(--bev-stage-rotation-deg));
+    transform-origin: center center;
+}
+
 .bev-location-label {
     position: absolute;
     top: calc(2.65rem + var(--bev-location-label-offset-y));
@@ -306,7 +327,7 @@ body.coldstore-body {
     gap: 1rem;
     width: max-content;
     max-width: calc(100% - 1.5rem);
-    transform: translateX(-50%);
+    transform: translateX(-50%) rotate(180deg);
     color: #4169E1;
     font-size: clamp(1rem, 2.8vw, 1.5rem);
     font-weight: 700;
@@ -487,7 +508,7 @@ body.coldstore-body {
     color: #92400e;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
     :root {
         --bev-location-label-offset-x: 5%;
         --bev-location-label-offset-y: 0px;

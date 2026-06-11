@@ -331,8 +331,6 @@ function bootDashboard() {
                 ${imageHref ? `<image class="bev-map-image" href="${imageHref}" x="4" y="4" width="92" height="92" preserveAspectRatio="none"></image>` : ''}
                 ${trackMarkup}
             </g>
-            <rect x="4" y="4" width="92" height="10" fill="#d9e8da" rx="3"></rect>
-            <text x="6" y="10" fill="#2f4f35" font-size="4.2" font-weight="700">BEV Track Positions</text>
             <rect x="0.5" y="0.5" width="99" height="99" fill="none" stroke="#3d5a40" stroke-width="1" rx="6"></rect>
         `;
 
