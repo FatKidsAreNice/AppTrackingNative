@@ -10,7 +10,7 @@ it('returns demo overview data when no remote url is configured', function () {
 
     $response->assertSuccessful()
         ->assertJsonPath('meta.source_mode', 'demo')
-        ->assertJsonPath('overview.title', 'Coldstore Track Overview')
+        ->assertJsonPath('overview.title', 'Coldstore Overview')
         ->assertJsonCount(2, 'tracks');
 });
 

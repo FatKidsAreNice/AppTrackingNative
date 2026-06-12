@@ -9,23 +9,6 @@
         data-poll-interval="{{ $pollIntervalMs }}"
         data-overview-endpoint="{{ route('api.coldstore.overview', absolute: false) }}"
     >
-        <section class="hero-banner">
-            <div class="hero-banner__content">
-                <div class="hero-banner__brand">
-                    <img class="hero-banner__logo" src="/logo_sauels.svg" alt="Sauels Logo">
-                    <div>
-                        <p class="hero-banner__eyebrow">Sauels Coldstore Monitor</p>
-                        <h1 class="hero-banner__title">Track Overview</h1>
-                    </div>
-                </div>
-                <div class="hero-banner__meta">
-                    <span class="status-pill" data-source-pill>{{ $initialOverview['meta']['source_mode'] }}</span>
-                    <button class="hero-banner__button" type="button" data-refresh-overview>Jetzt aktualisieren</button>
-                </div>
-            </div>
-            <p class="hero-banner__subtitle" data-overview-subtitle>{{ $initialOverview['overview']['subtitle'] }}</p>
-        </section>
-
         <section class="dashboard-screen" data-dashboard-screen="overview">
             <section class="stats-grid">
                 <article class="info-card">

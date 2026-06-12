@@ -6,8 +6,10 @@ use App\Services\ColdstoreApiService;
 use App\Services\ColdstoreJobRepository;
 use App\Services\ColdstoreJobs\JobMatchingService;
 use App\Services\ColdstoreJobs\LineWorkplaceMapper;
+use App\Support\ColdstoreAppSurfaceResolver;
 use Composer\InstalledVersions;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 
 class ColdstoreDashboardController extends Controller
 {
@@ -16,12 +18,14 @@ class ColdstoreDashboardController extends Controller
         private ColdstoreJobRepository $coldstoreJobRepository,
         private JobMatchingService $jobMatchingService,
         private LineWorkplaceMapper $lineWorkplaceMapper,
+        private ColdstoreAppSurfaceResolver $coldstoreAppSurfaceResolver,
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $defaultLine = $this->lineWorkplaceMapper->defaultLine();
         $jobsDataSource = (string) config('coldstore.jobs.data_source', 'local');
+        $appSurface = $this->coldstoreAppSurfaceResolver->resolve($request);
         $jobsApi = [
             'dataSource' => $jobsDataSource,
             'baseUrl' => $this->normalizedJobsRemoteApiBaseUrl(),
@@ -34,6 +38,7 @@ class ColdstoreDashboardController extends Controller
             'initialJobs' => $jobsDataSource === 'remote_api'
                 ? $this->remoteApiInitialJobsPayload($defaultLine)
                 : $this->jobMatchingService->payloadForLine($defaultLine),
+            'appSurface' => $appSurface,
             'jobLines' => $this->lineWorkplaceMapper->all(),
             'jobsApi' => $jobsApi,
             'pollIntervalMs' => config('coldstore.poll_interval_seconds') * 1000,

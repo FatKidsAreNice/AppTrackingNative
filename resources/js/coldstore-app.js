@@ -256,7 +256,9 @@ function bootDashboard() {
 
             render();
         } catch (error) {
-            subtitle.textContent = error.message;
+            if (subtitle) {
+                subtitle.textContent = error.message;
+            }
         } finally {
             refreshButton?.removeAttribute('disabled');
         }
@@ -802,9 +804,15 @@ function bootDashboard() {
     }
 
     function renderMeta() {
-        sourcePill.textContent = state.overview.meta?.source_mode ?? 'unknown';
-        sourcePill.classList.toggle('status-pill--warn', state.overview.meta?.source_mode !== 'remote');
-        subtitle.textContent = state.overview.overview?.subtitle ?? '';
+        if (sourcePill) {
+            sourcePill.textContent = state.overview.meta?.source_mode ?? 'unknown';
+            sourcePill.classList.toggle('status-pill--warn', state.overview.meta?.source_mode !== 'remote');
+        }
+
+        if (subtitle) {
+            subtitle.textContent = state.overview.overview?.subtitle ?? '';
+        }
+
         trackCount.textContent = state.overview.overview?.track_count ?? '0';
         bevSource.textContent = state.overview.map?.background_url ? 'Live-Bild aktiv' : 'Nur Track-Overlay';
         updatedAt.textContent = new Date(state.overview.meta?.updated_at ?? Date.now()).toLocaleString('de-DE');

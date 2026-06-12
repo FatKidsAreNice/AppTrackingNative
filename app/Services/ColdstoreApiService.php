@@ -134,8 +134,8 @@ class ColdstoreApiService
                 'remote_error' => data_get($payload, 'meta.remote_error'),
             ],
             'overview' => [
-                'title' => (string) ($payload['overview']['title'] ?? 'Coldstore Track Overview'),
-                'subtitle' => (string) ($payload['overview']['subtitle'] ?? 'Kühlhaus-Overview mit Live-Tracks und BEV-Sync'),
+                'title' => (string) ($payload['overview']['title'] ?? 'Coldstore Overview'),
+                'subtitle' => (string) ($payload['overview']['subtitle'] ?? 'Live-Tracking und BEV-Sync'),
                 'status_text' => (string) ($payload['overview']['status_text'] ?? $this->statusText($sourceMode, $syncDelta)),
                 'track_count' => count($tracks),
                 'moving_count' => collect($tracks)->where('motion_state', 'moving')->count(),

@@ -5,7 +5,23 @@ use Illuminate\Support\Facades\Http;
 
 it('defines local as the default jobs data source in config', function () {
     expect(file_get_contents(config_path('coldstore.php')))
-        ->toContain("env('COLDSTORE_JOBS_DATA_SOURCE', 'local')");
+        ->toContain("env('COLDSTORE_JOBS_DATA_SOURCE', 'local')")
+        ->and(file_get_contents(config_path('coldstore.php')))
+        ->toContain("env('COLDSTORE_APP_SURFACE', 'desktop')");
+});
+
+it('renders the dashboard without the hero header', function () {
+    Config::set('coldstore.remote.base_url', null);
+    Config::set('coldstore.jobs.data_source', 'local');
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
+
+    $response = $this->get(route('coldstore.dashboard'));
+
+    $response->assertSuccessful()
+        ->assertDontSee('Sauels Coldstore Monitor')
+        ->assertDontSee('Track Overview')
+        ->assertDontSee('Jetzt aktualisieren')
+        ->assertDontSee('Kühlhaus-Overview mit Live-Tracks und BEV-Sync');
 });
 
 it('renders the overview dashboard with local jobs api config', function () {
@@ -16,7 +32,6 @@ it('renders the overview dashboard with local jobs api config', function () {
     $response = $this->get(route('coldstore.dashboard'));
 
     $response->assertSuccessful()
-        ->assertSee('Track Overview')
         ->assertSee('Overview')
         ->assertSee('Aufträge')
         ->assertSee('Jobs')

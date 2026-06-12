@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'app_surface' => env('COLDSTORE_APP_SURFACE', 'desktop'),
     'poll_interval_seconds' => (int) env('COLDSTORE_POLL_INTERVAL_SECONDS', 5),
     'demo_fallback' => (bool) env('COLDSTORE_DEMO_FALLBACK', true),
     'scanner' => [
