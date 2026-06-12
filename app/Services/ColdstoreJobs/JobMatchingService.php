@@ -8,6 +8,7 @@ class JobMatchingService
         private LineWorkplaceMapper $lineWorkplaceMapper,
         private ProductionOrderRepository $productionOrderRepository,
         private ColdstoreInventoryRepository $coldstoreInventoryRepository,
+        private EtikInterfaceLookupRepository $etikInterfaceLookupRepository,
     ) {}
 
     /**
@@ -21,6 +22,7 @@ class JobMatchingService
      *         matstamm_matnr: string,
      *         matstamm_maktx: string,
      *         matstamm_fuellartnr: string,
+     *         required_product_name: ?string,
      *         va_menge_kg: ?float,
      *         required_pe_text1: string,
      *         va_beginn_soll: string,
@@ -35,6 +37,7 @@ class JobMatchingService
      *         matstamm_matnr: string,
      *         matstamm_maktx: string,
      *         matstamm_fuellartnr: string,
+     *         required_product_name: ?string,
      *         va_menge_kg: ?float,
      *         required_pe_text1: string,
      *         va_beginn_soll: string,
@@ -114,6 +117,7 @@ class JobMatchingService
      *     matstamm_matnr: string,
      *     matstamm_maktx: string,
      *     matstamm_fuellartnr: string,
+     *     required_product_name: ?string,
      *     va_menge_kg: ?float,
      *     va_beginn_soll: string,
      *     va_beginn_ist: ?string,
@@ -127,6 +131,7 @@ class JobMatchingService
      *     matstamm_matnr: string,
      *     matstamm_maktx: string,
      *     matstamm_fuellartnr: string,
+     *     required_product_name: ?string,
      *     va_menge_kg: ?float,
      *     required_pe_text1: string,
      *     va_beginn_soll: string,
@@ -138,6 +143,10 @@ class JobMatchingService
     private function normalizeOrder(array $order): array
     {
         $matstammFuellArtNr = trim((string) $order['matstamm_fuellartnr']);
+        $requiredPeText1 = $this->requiredPeText1ForFuellArtNr($matstammFuellArtNr);
+        $requiredProductName = filled($order['required_product_name'] ?? null)
+            ? trim((string) $order['required_product_name'])
+            : $this->etikInterfaceLookupRepository->productNameForRequiredPeText1($requiredPeText1);
 
         return [
             'va_id' => (int) $order['va_id'],
@@ -146,8 +155,9 @@ class JobMatchingService
             'matstamm_matnr' => trim((string) $order['matstamm_matnr']),
             'matstamm_maktx' => trim((string) $order['matstamm_maktx']),
             'matstamm_fuellartnr' => $matstammFuellArtNr,
+            'required_product_name' => filled($requiredProductName) ? trim((string) $requiredProductName) : null,
             'va_menge_kg' => isset($order['va_menge_kg']) ? (float) $order['va_menge_kg'] : null,
-            'required_pe_text1' => $this->requiredPeText1ForFuellArtNr($matstammFuellArtNr),
+            'required_pe_text1' => $requiredPeText1,
             'va_beginn_soll' => trim((string) $order['va_beginn_soll']),
             'va_beginn_ist' => $order['va_beginn_ist'] ? trim((string) $order['va_beginn_ist']) : null,
             'va_ende_soll' => $order['va_ende_soll'] ? trim((string) $order['va_ende_soll']) : null,

@@ -31,6 +31,7 @@ class SqlServerProductionOrderRepository extends ProductionOrderRepository
      *     matstamm_matnr: string,
      *     matstamm_maktx: string,
      *     matstamm_fuellartnr: string,
+     *     required_product_name: ?string,
      *     va_menge_kg: ?float,
      *     va_beginn_soll: string,
      *     va_beginn_ist: ?string,
@@ -51,6 +52,7 @@ class SqlServerProductionOrderRepository extends ProductionOrderRepository
      *     matstamm_matnr: string,
      *     matstamm_maktx: string,
      *     matstamm_fuellartnr: string,
+     *     required_product_name: ?string,
      *     va_menge_kg: ?float,
      *     va_beginn_soll: string,
      *     va_beginn_ist: ?string,
@@ -93,22 +95,35 @@ SELECT TOP (2)
     v.VA_Auftragsnr,
     v.VA_Status,
     v.MatStamm_MatNr,
-    v.MatStamm_MaktX,
+    order_m.MatStamm_MaktX AS MatStamm_MaktX,
     v.VA_Mengekg,
     v.Arbeitsplatz_Nr,
     v.VA_BeginnSoll,
     v.VA_BeginnIst,
     v.VA_EndeSoll,
     v.VA_EndeIst,
-    m.MatStamm_FuellArtNr,
-    CASE
-        WHEN LEFT(LTRIM(RTRIM(m.MatStamm_FuellArtNr)), 1) = 'F'
-            THEN '9' + SUBSTRING(LTRIM(RTRIM(m.MatStamm_FuellArtNr)), 2, LEN(LTRIM(RTRIM(m.MatStamm_FuellArtNr))) - 1)
-        ELSE LTRIM(RTRIM(m.MatStamm_FuellArtNr))
-    END AS Required_PEText1
+    order_m.MatStamm_FuellArtNr,
+    required_key.Required_PEText1,
+    required_lookup.Required_Product_Name
 FROM VA v
-INNER JOIN MatStamm m
-    ON m.MatStamm_MatNr = v.MatStamm_MatNr
+INNER JOIN MatStamm order_m
+    ON order_m.MatStamm_MatNr = v.MatStamm_MatNr
+OUTER APPLY (
+    SELECT
+        CASE
+            WHEN LEFT(LTRIM(RTRIM(order_m.MatStamm_FuellArtNr)), 1) = 'F'
+                THEN '9' + SUBSTRING(LTRIM(RTRIM(order_m.MatStamm_FuellArtNr)), 2, LEN(LTRIM(RTRIM(order_m.MatStamm_FuellArtNr))) - 1)
+            ELSE LTRIM(RTRIM(order_m.MatStamm_FuellArtNr))
+        END AS Required_PEText1
+) required_key
+OUTER APPLY (
+    SELECT TOP (1)
+        required_m.MatStamm_MaktX AS Required_Product_Name
+    FROM MatStamm required_m
+    WHERE LTRIM(RTRIM(CAST(required_m.MatStamm_MatNr AS varchar(50)))) = required_key.Required_PEText1
+    ORDER BY
+        required_m.MatStamm_MatNr ASC
+) required_lookup
 WHERE v.VA_Status = 2
   AND v.Arbeitsplatz_Nr = ?
 ORDER BY
@@ -126,6 +141,7 @@ SQL;
      *     matstamm_matnr: string,
      *     matstamm_maktx: string,
      *     matstamm_fuellartnr: string,
+     *     required_product_name: ?string,
      *     va_menge_kg: ?float,
      *     va_beginn_soll: string,
      *     va_beginn_ist: ?string,
@@ -142,6 +158,7 @@ SQL;
             'matstamm_matnr' => trim((string) $row->MatStamm_MatNr),
             'matstamm_maktx' => trim((string) $row->MatStamm_MaktX),
             'matstamm_fuellartnr' => trim((string) $row->MatStamm_FuellArtNr),
+            'required_product_name' => $this->nullableTrim($row->Required_Product_Name ?? null),
             'va_menge_kg' => isset($row->VA_Mengekg) ? (float) $row->VA_Mengekg : null,
             'va_beginn_soll' => trim((string) $row->VA_BeginnSoll),
             'va_beginn_ist' => $this->nullableTrim($row->VA_BeginnIst ?? null),

@@ -515,7 +515,7 @@ function bootDashboard() {
                 </div>
                 <dl class="detail-grid detail-grid--compact">
                     <dt>Produktname</dt>
-                    <dd>${order.matstamm_maktx}</dd>
+                    <dd>${order.required_product_name ?? order.matstamm_maktx}</dd>
                     <dt>MatStamm MatNr</dt>
                     <dd>${order.matstamm_matnr}</dd>
                     <dt>MatStamm_FuellArtNr</dt>

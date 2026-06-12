@@ -162,7 +162,7 @@
                                 </div>
                                 <dl class="detail-grid detail-grid--compact">
                                     <dt>Produktname</dt>
-                                    <dd>{{ $initialOrder['matstamm_maktx'] }}</dd>
+                                    <dd>{{ $initialOrder['required_product_name'] ?? $initialOrder['matstamm_maktx'] }}</dd>
                                     <dt>MatStamm MatNr</dt>
                                     <dd>{{ $initialOrder['matstamm_matnr'] }}</dd>
                                     <dt>MatStamm_FuellArtNr</dt>
@@ -187,7 +187,7 @@
                                     </div>
                                     <dl class="detail-grid detail-grid--compact">
                                         <dt>Produktname</dt>
-                                        <dd>{{ $initialNextOrder['matstamm_maktx'] }}</dd>
+                                        <dd>{{ $initialNextOrder['required_product_name'] ?? $initialNextOrder['matstamm_maktx'] }}</dd>
                                         <dt>MatStamm MatNr</dt>
                                         <dd>{{ $initialNextOrder['matstamm_matnr'] }}</dd>
                                         <dt>MatStamm_FuellArtNr</dt>

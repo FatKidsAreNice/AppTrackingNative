@@ -9,6 +9,15 @@ it('exposes the expected sql server query', function () {
 
     expect($sql)->toContain('SELECT TOP (2)')
         ->and($sql)->toContain('INNER JOIN MatStamm')
+        ->and($sql)->toContain('OUTER APPLY')
+        ->and($sql)->toContain('INNER JOIN MatStamm order_m')
+        ->and($sql)->toContain('order_m.MatStamm_MaktX AS MatStamm_MaktX')
+        ->and($sql)->toContain('order_m.MatStamm_FuellArtNr')
+        ->and($sql)->toContain('required_key.Required_PEText1')
+        ->and($sql)->toContain('Required_Product_Name')
+        ->and($sql)->toContain('required_m.MatStamm_MatNr')
+        ->and($sql)->toContain('= required_key.Required_PEText1')
+        ->and($sql)->not->toContain('lookup.MatStamm_FuellArtNr')
         ->and($sql)->toContain('v.VA_Status = 2')
         ->and($sql)->toContain('v.VA_Mengekg')
         ->and($sql)->toContain('v.Arbeitsplatz_Nr = ?')
@@ -32,8 +41,10 @@ it('mock production orders include current and following orders for a workplace'
 
     expect($orders)->toHaveCount(2)
         ->and($orders[0]['va_auftragsnr'])->toBe('4711-06')
+        ->and($orders[0]['required_product_name'])->toBe('Produkt fuer PEText1 95106')
         ->and($orders[0]['va_menge_kg'])->toBe(123.45)
         ->and($orders[1]['va_auftragsnr'])->toBe('4711-06-F')
+        ->and($orders[1]['required_product_name'])->toBe('Rinderschinken fuer PEText1 91200')
         ->and($orders[1]['va_menge_kg'])->toBe(98.7)
         ->and($repository->nextOpenOrderForWorkplace(3506)['va_auftragsnr'])->toBe('4711-06');
 });
@@ -51,6 +62,7 @@ it('maps a sql server row to the existing order payload shape', function () {
         'MatStamm_MatNr' => ' 100006 ',
         'MatStamm_MaktX' => ' Beispielauftrag Linie 6 ',
         'MatStamm_FuellArtNr' => ' F5106 ',
+        'Required_Product_Name' => ' Produkt fuer PEText1 95106 ',
         'VA_Mengekg' => 123.45,
         'VA_BeginnSoll' => '2026-06-11 08:00:00',
         'VA_BeginnIst' => null,
@@ -65,6 +77,7 @@ it('maps a sql server row to the existing order payload shape', function () {
         'matstamm_matnr' => '100006',
         'matstamm_maktx' => 'Beispielauftrag Linie 6',
         'matstamm_fuellartnr' => 'F5106',
+        'required_product_name' => 'Produkt fuer PEText1 95106',
         'va_menge_kg' => 123.45,
         'va_beginn_soll' => '2026-06-11 08:00:00',
         'va_beginn_ist' => null,
@@ -86,6 +99,7 @@ it('maps two sql server rows as current and following open orders', function () 
                     'MatStamm_MatNr' => '100006',
                     'MatStamm_MaktX' => 'Beispielauftrag Linie 6',
                     'MatStamm_FuellArtNr' => 'F5106',
+                    'Required_Product_Name' => 'Produkt fuer PEText1 95106',
                     'VA_Mengekg' => 123.45,
                     'VA_BeginnSoll' => '2026-06-11 08:00:00',
                     'VA_BeginnIst' => null,
@@ -99,6 +113,7 @@ it('maps two sql server rows as current and following open orders', function () 
                     'MatStamm_MatNr' => '100106',
                     'MatStamm_MaktX' => 'Folgeauftrag Linie 6',
                     'MatStamm_FuellArtNr' => 'F1200',
+                    'Required_Product_Name' => 'Rinderschinken fuer PEText1 91200',
                     'VA_Mengekg' => null,
                     'VA_BeginnSoll' => '2026-06-11 10:15:00',
                     'VA_BeginnIst' => null,
@@ -116,12 +131,14 @@ it('maps two sql server rows as current and following open orders', function () 
             'va_id' => 11006,
             'va_auftragsnr' => '4711-06',
             'matstamm_fuellartnr' => 'F5106',
+            'required_product_name' => 'Produkt fuer PEText1 95106',
             'va_menge_kg' => 123.45,
         ])
         ->and($orders[1])->toMatchArray([
             'va_id' => 12006,
             'va_auftragsnr' => '4711-06-F',
             'matstamm_fuellartnr' => 'F1200',
+            'required_product_name' => 'Rinderschinken fuer PEText1 91200',
             'va_menge_kg' => null,
         ])
         ->and($repository->nextOpenOrderForWorkplace(3506))->toMatchArray([

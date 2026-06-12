@@ -1,11 +1,12 @@
 <?php
 
 use App\Services\ColdstoreJobs\ColdstoreInventoryRepository;
+use App\Services\ColdstoreJobs\EtikInterfaceLookupRepository;
 use App\Services\ColdstoreJobs\JobMatchingService;
 use App\Services\ColdstoreJobs\LineWorkplaceMapper;
 use App\Services\ColdstoreJobs\ProductionOrderRepository;
 
-function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryOverride = null): JobMatchingService
+function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryOverride = null, ?array $lookupOverride = null): JobMatchingService
 {
     return new JobMatchingService(
         new LineWorkplaceMapper,
@@ -34,6 +35,7 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
                         'matstamm_matnr' => '100002',
                         'matstamm_maktx' => 'Kochschinken Linie 2',
                         'matstamm_fuellartnr' => ' F7777 ',
+                        'required_product_name' => null,
                         'va_menge_kg' => null,
                         'va_beginn_soll' => '2026-06-11T07:30:00',
                         'va_beginn_ist' => null,
@@ -48,6 +50,7 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
                         'matstamm_matnr' => '100004',
                         'matstamm_maktx' => 'Salami Linie 4',
                         'matstamm_fuellartnr' => 'F8888',
+                        'required_product_name' => 'Salami fuer PEText1 98888',
                         'va_menge_kg' => 96.25,
                         'va_beginn_soll' => '2026-06-11T08:30:00',
                         'va_beginn_ist' => null,
@@ -61,6 +64,7 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
                         'matstamm_matnr' => '100005',
                         'matstamm_maktx' => 'Putenbrust Linie 5',
                         'matstamm_fuellartnr' => 'F1234',
+                        'required_product_name' => 'Putenbrust fuer PEText1 91234',
                         'va_menge_kg' => 82.0,
                         'va_beginn_soll' => '2026-06-11T09:00:00',
                         'va_beginn_ist' => null,
@@ -74,6 +78,7 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
                         'matstamm_matnr' => '100006',
                         'matstamm_maktx' => 'Beispielauftrag Linie 6',
                         'matstamm_fuellartnr' => 'F5106',
+                        'required_product_name' => 'Produkt fuer PEText1 95106',
                         'va_menge_kg' => 123.45,
                         'va_beginn_soll' => '2026-06-11T08:00:00',
                         'va_beginn_ist' => null,
@@ -153,6 +158,15 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
                 return 'test';
             }
         },
+        new class($lookupOverride) extends EtikInterfaceLookupRepository
+        {
+            public function __construct(private ?array $lookupOverride) {}
+
+            public function productNameForRequiredPeText1(string $requiredPeText1): ?string
+            {
+                return $this->lookupOverride[$requiredPeText1] ?? null;
+            }
+        },
     );
 }
 
@@ -168,6 +182,7 @@ it('returns a matching uid with track assignment for the default mock line', fun
 
     expect($payload['arbeitsplatz_nr'])->toBe(3506)
         ->and($payload['order']['matstamm_fuellartnr'])->toBe('F5106')
+        ->and($payload['order']['required_product_name'])->toBe('Produkt fuer PEText1 95106')
         ->and($payload['order']['va_menge_kg'])->toBe(123.45)
         ->and($payload['order']['required_pe_text1'])->toBe('95106')
         ->and($payload['next_order'])->toBeNull()
@@ -191,6 +206,7 @@ it('returns a current order and a following order with separate inventory matche
                 'matstamm_matnr' => '100001',
                 'matstamm_maktx' => 'Current product',
                 'matstamm_fuellartnr' => 'F5106',
+                'required_product_name' => 'Resolved current product',
                 'va_menge_kg' => 123.45,
                 'va_beginn_soll' => '2026-06-11T08:00:00',
                 'va_beginn_ist' => null,
@@ -204,6 +220,7 @@ it('returns a current order and a following order with separate inventory matche
                 'matstamm_matnr' => '100002',
                 'matstamm_maktx' => 'Next product',
                 'matstamm_fuellartnr' => 'F1200',
+                'required_product_name' => 'Resolved next product',
                 'va_menge_kg' => 98.7,
                 'va_beginn_soll' => '2026-06-11T10:00:00',
                 'va_beginn_ist' => null,
@@ -238,8 +255,10 @@ it('returns a current order and a following order with separate inventory matche
     )->payloadForLine(6);
 
     expect($payload['order']['va_auftragsnr'])->toBe('CURRENT')
+        ->and($payload['order']['required_product_name'])->toBe('Resolved current product')
         ->and($payload['order']['va_menge_kg'])->toBe(123.45)
         ->and($payload['next_order']['va_auftragsnr'])->toBe('NEXT')
+        ->and($payload['next_order']['required_product_name'])->toBe('Resolved next product')
         ->and($payload['next_order']['va_menge_kg'])->toBe(98.7)
         ->and($payload['matching_uids'])->toHaveCount(1)
         ->and($payload['matching_uids'][0]['uid'])->toBe('UID-CURRENT')
@@ -251,7 +270,31 @@ it('returns no matching uid when the order has no current coldstore hit', functi
     $payload = makeJobMatchingService()->payloadForLine(2);
 
     expect($payload['order']['required_pe_text1'])->toBe('97777')
+        ->and($payload['order']['required_product_name'])->toBeNull()
         ->and($payload['matching_uids'])->toBe([]);
+});
+
+it('resolves the required product name via lookup when the order does not provide one', function () {
+    $payload = makeJobMatchingService(
+        [
+            'va_id' => 1,
+            'va_auftragsnr' => '4711',
+            'va_status' => 2,
+            'matstamm_matnr' => '123456',
+            'matstamm_maktx' => 'Auftragsartikel',
+            'matstamm_fuellartnr' => 'F5106',
+            'required_product_name' => null,
+            'va_menge_kg' => 11.0,
+            'va_beginn_soll' => '2026-06-11T08:00:00',
+            'va_beginn_ist' => null,
+            'va_ende_soll' => null,
+            'va_ende_ist' => null,
+        ],
+        null,
+        ['95106' => 'Lookup Produkt'],
+    )->payloadForLine(6);
+
+    expect($payload['order']['required_product_name'])->toBe('Lookup Produkt');
 });
 
 it('returns no order when the selected line has no open production order', function () {
@@ -291,6 +334,7 @@ it('matches only against the coldstore inventory repository using trimmed string
             'matstamm_matnr' => '123456',
             'matstamm_maktx' => 'Testartikel',
             'matstamm_fuellartnr' => ' F5106 ',
+            'required_product_name' => null,
             'va_menge_kg' => 44.4,
             'va_beginn_soll' => '2026-06-11T08:00:00',
             'va_beginn_ist' => null,

@@ -25,6 +25,7 @@ it('renders the overview dashboard with local jobs api config', function () {
         ->assertSee('Linie 6')
         ->assertSee('Arbeitsplatz')
         ->assertSee('Required_PEText1')
+        ->assertSee('Produkt fuer PEText1 95106')
         ->assertSee('Menge')
         ->assertSee('123,45 kg')
         ->assertSee('"dataSource":"local"', false)
@@ -52,6 +53,19 @@ it('renders a neutral loading jobs state for remote api mode', function () {
         ->assertSee('Jobs werden geladen ...')
         ->assertDontSee('UID-L6-A')
         ->assertDontSee('4711-06');
+});
+
+it('falls back to the order article name when no required product name is available', function () {
+    Config::set('coldstore.remote.base_url', null);
+    Config::set('coldstore.jobs.data_source', 'local');
+    Config::set('coldstore.jobs.default_selected_line', 2);
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
+
+    $response = $this->get(route('coldstore.dashboard'));
+
+    $response->assertSuccessful()
+        ->assertSee('Kochschinken Linie 2')
+        ->assertSee('unbekannt');
 });
 
 it('renders the scanner module', function () {
