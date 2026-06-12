@@ -28,12 +28,33 @@
     --coldstore-line: #d5dee8;
 }
 
+html,
+body.coldstore-body {
+    touch-action: manipulation;
+    overscroll-behavior: none;
+}
+
 body.coldstore-body {
     min-height: 100vh;
     background:
         radial-gradient(circle at top right, rgb(15 58 99 / 18%), transparent 25%),
         linear-gradient(180deg, #f8fbfd 0%, #edf3f7 55%, #e8eef4 100%);
     color: var(--coldstore-ink);
+}
+
+body.coldstore-body button,
+body.coldstore-body a,
+body.coldstore-body [role='button'],
+body.coldstore-body input,
+body.coldstore-body select,
+body.coldstore-body textarea {
+    touch-action: manipulation;
+}
+
+body.coldstore-body input,
+body.coldstore-body select,
+body.coldstore-body textarea {
+    font-size: 16px;
 }
 
 .coldstore-shell {

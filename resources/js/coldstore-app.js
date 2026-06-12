@@ -5,9 +5,36 @@ const csrfToken = document
     ?.getAttribute('content');
 
 document.addEventListener('DOMContentLoaded', () => {
+    bootColdstoreTouchGuards();
     bootDashboard();
     bootScanner();
 });
+
+function bootColdstoreTouchGuards() {
+    if (!document.body?.classList.contains('coldstore-body')) {
+        return;
+    }
+
+    document.addEventListener('gesturestart', (event) => {
+        event.preventDefault();
+    });
+
+    let lastTouchEnd = 0;
+
+    document.addEventListener(
+        'touchend',
+        (event) => {
+            const now = Date.now();
+
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+
+            lastTouchEnd = now;
+        },
+        { passive: false },
+    );
+}
 
 function bootDashboard() {
     const root = document.querySelector('[data-coldstore-dashboard]');

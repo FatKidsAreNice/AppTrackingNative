@@ -18,6 +18,7 @@ it('renders the dashboard without the hero header', function () {
     $response = $this->get(route('coldstore.dashboard'));
 
     $response->assertSuccessful()
+        ->assertSee('maximum-scale=1, user-scalable=no, viewport-fit=cover', false)
         ->assertDontSee('Sauels Coldstore Monitor')
         ->assertDontSee('Track Overview')
         ->assertDontSee('Jetzt aktualisieren')
