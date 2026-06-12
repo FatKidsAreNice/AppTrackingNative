@@ -24,7 +24,7 @@ it('renders the dashboard without the hero header', function () {
         ->assertDontSee('Kühlhaus-Overview mit Live-Tracks und BEV-Sync');
 });
 
-it('renders the overview dashboard with local jobs api config', function () {
+it('renders the compact jobs overview for the mobile workflow', function () {
     Config::set('coldstore.remote.base_url', null);
     Config::set('coldstore.jobs.data_source', 'local');
     Config::set('coldstore.jobs.production_orders.source', 'mock');
@@ -41,14 +41,20 @@ it('renders the overview dashboard with local jobs api config', function () {
         ->assertDontSee('Ausgewählte Linie')
         ->assertDontSee('Arbeitsplatz')
         ->assertDontSee('Datenquelle')
-        ->assertSee('Required_PEText1')
         ->assertDontSee('MatStamm MatNr')
         ->assertDontSee('MatStamm_FuellArtNr')
         ->assertSee('Produkt fuer PEText1 95106')
-        ->assertSee('95<strong>106</strong>', false)
-        ->assertSee('91<strong>200</strong>', false)
-        ->assertSee('Menge')
-        ->assertSee('123,45 kg')
+        ->assertSee('Rinderschinken fuer PEText1 91200')
+        ->assertDontSee('VA_Status 2')
+        ->assertDontSee('Required_PEText1')
+        ->assertDontSee('Menge')
+        ->assertDontSee('123,45 kg')
+        ->assertSee('data-open-job-detail="current"', false)
+        ->assertSee('data-open-job-detail="next"', false)
+        ->assertSee('data-job-detail-panel hidden', false)
+        ->assertSee('data-close-job-detail', false)
+        ->assertSee('"matching_uids":[{"uid":"UID-L6-A"', false)
+        ->assertSee('"next_matching_uids":[{"uid":"UID-L1-A"', false)
         ->assertSee('"dataSource":"local"', false)
         ->assertSee('"jobsPath":"\\/api\\/coldstore\\/jobs"', false)
         ->assertSee('data-select-dashboard-screen="overview"', false)
@@ -76,7 +82,7 @@ it('renders a neutral loading jobs state for remote api mode', function () {
         ->assertDontSee('4711-06');
 });
 
-it('falls back to the order article name when no required product name is available', function () {
+it('falls back to the order article name and shows no next order hint when needed', function () {
     Config::set('coldstore.remote.base_url', null);
     Config::set('coldstore.jobs.data_source', 'local');
     Config::set('coldstore.jobs.default_selected_line', 2);
@@ -86,7 +92,10 @@ it('falls back to the order article name when no required product name is availa
 
     $response->assertSuccessful()
         ->assertSee('Kochschinken Linie 2')
-        ->assertSee('unbekannt');
+        ->assertSee('Kein freigegebener Folgeauftrag vorhanden')
+        ->assertDontSee('VA_Status 2')
+        ->assertDontSee('Required_PEText1')
+        ->assertDontSee('Menge');
 });
 
 it('renders the scanner module', function () {

@@ -359,6 +359,64 @@ body.coldstore-body {
     padding: 1rem;
 }
 
+.job-order-card__overview {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.job-order-card__button {
+    width: 100%;
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.95rem 1rem;
+    border: 1px solid #dde5ec;
+    border-radius: 1rem;
+    background: white;
+    text-align: left;
+    cursor: pointer;
+}
+
+.job-order-card__button--disabled {
+    cursor: default;
+    border-style: dashed;
+    color: #5b6877;
+    background: #f8fafc;
+}
+
+.job-order-card__eyebrow {
+    color: #5b6877;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.job-order-card__number {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #111827;
+}
+
+.job-order-card__product {
+    color: #344256;
+}
+
+.job-order-card__detail {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.job-order-card__back {
+    width: fit-content;
+    border: 0;
+    padding: 0;
+    background: none;
+    color: #0f3a63;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
 .job-order-card__header {
     display: flex;
     align-items: flex-start;

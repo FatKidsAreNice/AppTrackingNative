@@ -32,9 +32,9 @@ function bootDashboard() {
         jobLines: window.coldstoreDashboardJobLines ?? [],
         jobsError: null,
         jobsLoading: Boolean(initialJobs.meta?.loading),
+        activeJobDetail: null,
         activeDashboardScreen: 'overview',
         filter: '',
-        selectedMatchingUid: null,
         selectedTrackId: initialOverview.overview?.selected_track_id ?? null,
         trackSessionSeenAt: {},
         mapBackgroundCache: {
@@ -45,7 +45,6 @@ function bootDashboard() {
         },
     };
 
-    const jobsList = root.querySelector('[data-jobs-list]');
     const jobOrder = root.querySelector('[data-job-order]');
     const selectedLineLabel = root.querySelector('[data-selected-line-label]');
     const coldstoreName = root.querySelector('[data-coldstore-name]');
@@ -63,7 +62,6 @@ function bootDashboard() {
     const subtitle = root.querySelector('[data-overview-subtitle]');
     const trackCount = root.querySelector('[data-track-count]');
     const bevSource = root.querySelector('[data-bev-source]');
-    const jobStatus = root.querySelector('[data-job-status]');
     const updatedAt = root.querySelector('[data-updated-at]');
     const detailTitle = root.querySelector('[data-detail-title]');
     const filterInput = root.querySelector('[data-track-filter]');
@@ -135,10 +133,6 @@ function bootDashboard() {
 
     function jobsWorkplaceNumberForLine(selectedLine) {
         return state.jobLines.find((line) => line.line === Number(selectedLine))?.workplace_number ?? null;
-    }
-
-    function findSelectedMatchingUid() {
-        return (state.jobsData.matching_uids ?? []).find((entry) => entry.uid === state.selectedMatchingUid) ?? null;
     }
 
     function buildJobsUrl(selectedLine) {
@@ -283,7 +277,7 @@ function bootDashboard() {
 
             state.jobsData = await response.json();
             state.jobsLoading = false;
-            state.selectedMatchingUid = null;
+            state.activeJobDetail = null;
             setLinePickerOpen(false);
             render();
         } catch (error) {
@@ -321,27 +315,6 @@ function bootDashboard() {
 
     function findSelectedTrack() {
         return (state.overview.tracks ?? []).find((track) => track.track_id === Number(state.selectedTrackId)) ?? null;
-    }
-
-    function setTrackFilter(value) {
-        state.filter = value.toLowerCase();
-
-        if (filterInput) {
-            filterInput.value = value;
-        }
-    }
-
-    function selectMatchingUid(uid) {
-        state.selectedMatchingUid = uid;
-
-        const selectedUid = findSelectedMatchingUid();
-
-        if (selectedUid?.track_id) {
-            state.selectedTrackId = selectedUid.track_id;
-            setTrackFilter(String(selectedUid.track_id));
-        }
-
-        render();
     }
 
     function mapPoint(x, y) {
@@ -678,6 +651,198 @@ function bootDashboard() {
         });
 
         renderJobStatus();
+    }
+
+    function renderJobOrder() {
+        const order = state.jobsData.order;
+
+        if (!jobOrder) {
+            return;
+        }
+
+        if (state.jobsLoading) {
+            jobOrder.innerHTML = `
+                <div class="job-order-card__empty">
+                    <p class="panel-card__eyebrow">Aktueller Auftrag</p>
+                    <p>Jobs werden geladen ...</p>
+                </div>
+            `;
+
+            return;
+        }
+
+        if (!order) {
+            state.activeJobDetail = null;
+            jobOrder.innerHTML = `
+                <div class="job-order-card__empty">
+                    <p class="panel-card__eyebrow">Aktueller Auftrag</p>
+                    <p>Für diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.</p>
+                </div>
+            `;
+
+            return;
+        }
+
+        jobOrder.innerHTML = `
+            ${renderJobOverview()}
+            ${renderJobDetailPanel()}
+        `;
+
+        bindJobOrderActions();
+        renderJobOrderState();
+    }
+
+    function renderJobOverview() {
+        const order = state.jobsData.order;
+        const nextOrder = state.jobsData.next_order;
+
+        return `
+            <div class="job-order-card__overview" data-job-overview ${state.activeJobDetail ? 'hidden' : ''}>
+                <button class="job-order-card__button" type="button" data-open-job-detail="current">
+                    <span class="job-order-card__eyebrow">Aktueller Auftrag</span>
+                    <strong class="job-order-card__number">${escapeHtml(order?.va_auftragsnr ?? '—')}</strong>
+                    <span class="job-order-card__product">${escapeHtml(jobProductName(order))}</span>
+                </button>
+                ${nextOrder
+            ? `
+                        <button class="job-order-card__button" type="button" data-open-job-detail="next">
+                            <span class="job-order-card__eyebrow">Folgeauftrag</span>
+                            <strong class="job-order-card__number">${escapeHtml(nextOrder?.va_auftragsnr ?? '—')}</strong>
+                            <span class="job-order-card__product">${escapeHtml(jobProductName(nextOrder))}</span>
+                        </button>
+                    `
+            : `
+                        <article class="job-order-card__button job-order-card__button--disabled" data-open-job-detail="next" aria-disabled="true">
+                            <span class="job-order-card__eyebrow">Folgeauftrag</span>
+                            <strong class="job-order-card__number">&mdash;</strong>
+                            <span class="job-order-card__product">Kein freigegebener Folgeauftrag vorhanden</span>
+                        </article>
+                    `}
+            </div>
+        `;
+    }
+
+    function renderJobDetailPanel() {
+        const detail = activeJobDetailPayload();
+        const label = detail?.label ?? 'Aktueller Auftrag';
+        const order = detail?.order ?? state.jobsData.order;
+        const matchingUids = detail?.matchingUids ?? [];
+
+        return `
+            <section class="job-order-card__detail" data-job-detail-panel ${state.activeJobDetail ? '' : 'hidden'}>
+                <button class="job-order-card__back" type="button" data-close-job-detail>
+                    Zurück zu Aufträgen
+                </button>
+                <div class="job-order-card__section">
+                    <div class="job-order-card__header">
+                        <div>
+                            <p class="panel-card__eyebrow" data-job-detail-label>${label}</p>
+                            <h3 class="panel-card__title" data-job-detail-number>${escapeHtml(order?.va_auftragsnr ?? '—')}</h3>
+                        </div>
+                    </div>
+                    <dl class="detail-grid detail-grid--compact">
+                        <dt>Produktname</dt>
+                        <dd data-job-detail-product>${escapeHtml(jobProductName(order))}</dd>
+                        <dt>Required_PEText1</dt>
+                        <dd data-job-detail-required-pe>${formatRequiredPeText1(order?.required_pe_text1)}</dd>
+                        <dt>Menge</dt>
+                        <dd data-job-detail-quantity>${formatOrderQuantity(order?.va_menge_kg)}</dd>
+                        <dt>Passende UIDs</dt>
+                        <dd data-job-detail-matches>${renderMatchingUids(matchingUids)}</dd>
+                    </dl>
+                </div>
+            </section>
+        `;
+    }
+
+    function bindJobOrderActions() {
+        jobOrder.querySelectorAll('[data-open-job-detail]').forEach((button) => {
+            if (button.getAttribute('aria-disabled') === 'true') {
+                return;
+            }
+
+            button.addEventListener('click', () => {
+                state.activeJobDetail = button.dataset.openJobDetail;
+                renderJobOrderState();
+            });
+        });
+
+        jobOrder.querySelector('[data-close-job-detail]')?.addEventListener('click', () => {
+            state.activeJobDetail = null;
+            renderJobOrderState();
+        });
+    }
+
+    function renderJobOrderState() {
+        const overview = jobOrder.querySelector('[data-job-overview]');
+        const detailPanel = jobOrder.querySelector('[data-job-detail-panel]');
+
+        if (!overview || !detailPanel) {
+            return;
+        }
+
+        const detail = activeJobDetailPayload();
+
+        overview.hidden = Boolean(detail);
+        detailPanel.hidden = !detail;
+
+        if (!detail) {
+            return;
+        }
+
+        jobOrder.querySelector('[data-job-detail-label]').textContent = detail.label;
+        jobOrder.querySelector('[data-job-detail-number]').textContent = detail.order?.va_auftragsnr ?? '—';
+        jobOrder.querySelector('[data-job-detail-product]').textContent = jobProductName(detail.order);
+        jobOrder.querySelector('[data-job-detail-required-pe]').innerHTML = formatRequiredPeText1(detail.order?.required_pe_text1);
+        jobOrder.querySelector('[data-job-detail-quantity]').textContent = formatOrderQuantity(detail.order?.va_menge_kg);
+        jobOrder.querySelector('[data-job-detail-matches]').innerHTML = renderMatchingUids(detail.matchingUids);
+    }
+
+    function activeJobDetailPayload() {
+        if (state.activeJobDetail === 'next' && state.jobsData.next_order) {
+            return {
+                label: 'Folgeauftrag',
+                order: state.jobsData.next_order,
+                matchingUids: state.jobsData.next_matching_uids ?? [],
+            };
+        }
+
+        if (state.activeJobDetail === 'current' && state.jobsData.order) {
+            return {
+                label: 'Aktueller Auftrag',
+                order: state.jobsData.order,
+                matchingUids: state.jobsData.matching_uids ?? [],
+            };
+        }
+
+        return null;
+    }
+
+    function jobProductName(order) {
+        return order?.required_product_name ?? order?.matstamm_maktx ?? '—';
+    }
+
+    function renderMatchingUids(matchingUids) {
+        if (matchingUids.length === 0) {
+            return '<span class="panel-card__muted">Keine passende UID im Kühlhaus registriert</span>';
+        }
+
+        return `
+            <div class="job-order-card__matches">
+                ${matchingUids
+            .map((matchingUid) => `
+                        <span>
+                            <strong>${escapeHtml(matchingUid.uid)}</strong>
+                            <small>PEText1 ${escapeHtml(matchingUid.etikinterface_pe_text1)}</small>
+                        </span>
+                    `)
+            .join('')}
+            </div>
+        `;
+    }
+
+    function renderJobs() {
+        return;
     }
 
     function renderMap() {

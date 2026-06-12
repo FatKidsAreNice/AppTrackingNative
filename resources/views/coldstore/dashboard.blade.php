@@ -86,8 +86,9 @@
                 <article class="panel-card">
                     @php($initialOrder = $initialJobs['order'])
                     @php($initialNextOrder = $initialJobs['next_order'] ?? null)
-                    @php($initialNextMatchingUids = $initialJobs['next_matching_uids'] ?? [])
                     @php($isJobsRemoteApiLoading = (bool) data_get($initialJobs, 'meta.loading', false))
+                    @php($productName = fn (?array $order): string => $order['required_product_name'] ?? $order['matstamm_maktx'] ?? '—')
+                    @php($formatOrderQuantity = fn ($value): string => $value !== null ? number_format((float) $value, 2, ',', '.').' kg' : 'unbekannt')
                     @php($formatRequiredPeText1 = function (?string $value): string {
                         $normalizedValue = trim((string) $value);
 
@@ -104,7 +105,7 @@
                     <div class="panel-card__header">
                         <div>
                             <p class="panel-card__eyebrow">Jobs</p>
-                            <h2 class="panel-card__title">Vorbereitete Aufträge</h2>
+                            <h2 class="panel-card__title">Aufträge</h2>
                         </div>
                         <div class="line-picker" data-line-picker>
                             <button class="line-picker__toggle" type="button" data-toggle-line-picker aria-expanded="false">
@@ -126,21 +127,6 @@
                         </div>
                     </div>
 
-                    <div class="jobs-panel__meta" data-job-summary hidden aria-hidden="true">
-                        <article class="jobs-stat">
-                            <span class="jobs-stat__label"></span>
-                            <strong class="jobs-stat__value" data-job-selected-line></strong>
-                        </article>
-                        <article class="jobs-stat">
-                            <span class="jobs-stat__label"></span>
-                            <strong class="jobs-stat__value" data-job-workplace></strong>
-                        </article>
-                        <article class="jobs-stat">
-                            <span class="jobs-stat__label"></span>
-                            <strong class="jobs-stat__value" data-job-source></strong>
-                        </article>
-                    </div>
-
                     <div class="job-order-card" data-job-order>
                         @if ($isJobsRemoteApiLoading)
                             <div class="job-order-card__empty">
@@ -148,64 +134,34 @@
                                 <p>Jobs werden geladen ...</p>
                             </div>
                         @elseif ($initialOrder)
-                            <section class="job-order-card__section">
-                                <div class="job-order-card__header">
-                                    <div>
-                                        <p class="panel-card__eyebrow">Aktueller Auftrag</p>
-                                        <h3 class="panel-card__title">{{ $initialOrder['va_auftragsnr'] }}</h3>
-                                    </div>
-                                    <span class="status-pill status-pill--ok">VA_Status {{ $initialOrder['va_status'] }}</span>
-                                </div>
-                                <dl class="detail-grid detail-grid--compact">
-                                    <dt>Produktname</dt>
-                                    <dd>{{ $initialOrder['required_product_name'] ?? $initialOrder['matstamm_maktx'] }}</dd>
-                                    <dt>Required_PEText1</dt>
-                                    <dd>{!! $formatRequiredPeText1($initialOrder['required_pe_text1'] ?? null) !!}</dd>
-                                    <dt>Menge</dt>
-                                    <dd>{{ $initialOrder['va_menge_kg'] !== null ? number_format((float) $initialOrder['va_menge_kg'], 2, ',', '.').' kg' : 'unbekannt' }}</dd>
-                                    <dt>Beginn Soll</dt>
-                                    <dd>{{ $initialOrder['va_beginn_soll'] }}</dd>
-                                </dl>
-                            </section>
+                            <div class="job-order-card__overview" data-job-overview>
+                                <button class="job-order-card__button" type="button" data-open-job-detail="current">
+                                    <span class="job-order-card__eyebrow">Aktueller Auftrag</span>
+                                    <strong class="job-order-card__number">{{ $initialOrder['va_auftragsnr'] }}</strong>
+                                    <span class="job-order-card__product">{{ $productName($initialOrder) }}</span>
+                                </button>
 
-                            @if ($initialNextOrder)
-                                <section class="job-order-card__section">
-                                    <div class="job-order-card__header">
-                                        <div>
-                                            <p class="panel-card__eyebrow">Folgeauftrag</p>
-                                            <h3 class="panel-card__title">{{ $initialNextOrder['va_auftragsnr'] }}</h3>
-                                        </div>
-                                        <span class="status-pill status-pill--ok">VA_Status {{ $initialNextOrder['va_status'] }}</span>
-                                    </div>
-                                    <dl class="detail-grid detail-grid--compact">
-                                        <dt>Produktname</dt>
-                                        <dd>{{ $initialNextOrder['required_product_name'] ?? $initialNextOrder['matstamm_maktx'] }}</dd>
-                                        <dt>Required_PEText1</dt>
-                                        <dd>{!! $formatRequiredPeText1($initialNextOrder['required_pe_text1'] ?? null) !!}</dd>
-                                        <dt>Menge</dt>
-                                        <dd>{{ $initialNextOrder['va_menge_kg'] !== null ? number_format((float) $initialNextOrder['va_menge_kg'], 2, ',', '.').' kg' : 'unbekannt' }}</dd>
-                                        <dt>Beginn Soll</dt>
-                                        <dd>{{ $initialNextOrder['va_beginn_soll'] }}</dd>
-                                    </dl>
-                                    @if (count($initialNextMatchingUids) > 0)
-                                        <div class="job-order-card__matches">
-                                            @foreach ($initialNextMatchingUids as $matchingUid)
-                                                <span>
-                                                    <strong>{{ $matchingUid['uid'] }}</strong>
-                                                    <small>PEText1 {{ $matchingUid['etikinterface_pe_text1'] }}</small>
-                                                </span>
-                                            @endforeach
-                                        </div>
-                                    @else
-                                        <p class="panel-card__muted job-order-card__note">Keine passende UID fuer den Folgeauftrag gefunden.</p>
-                                    @endif
-                                </section>
-                            @else
-                                <section class="job-order-card__section job-order-card__empty">
-                                    <p class="panel-card__eyebrow">Folgeauftrag</p>
-                                    <p>Kein freigegebener Folgeauftrag vorhanden</p>
-                                </section>
-                            @endif
+                                @if ($initialNextOrder)
+                                    <button class="job-order-card__button" type="button" data-open-job-detail="next">
+                                        <span class="job-order-card__eyebrow">Folgeauftrag</span>
+                                        <strong class="job-order-card__number">{{ $initialNextOrder['va_auftragsnr'] }}</strong>
+                                        <span class="job-order-card__product">{{ $productName($initialNextOrder) }}</span>
+                                    </button>
+                                @else
+                                    <article class="job-order-card__button job-order-card__button--disabled" data-open-job-detail="next" aria-disabled="true">
+                                        <span class="job-order-card__eyebrow">Folgeauftrag</span>
+                                        <strong class="job-order-card__number">—</strong>
+                                        <span class="job-order-card__product">Kein freigegebener Folgeauftrag vorhanden</span>
+                                    </article>
+                                @endif
+                            </div>
+
+                            <section class="job-order-card__detail" data-job-detail-panel hidden>
+                                <button class="job-order-card__back" type="button" data-close-job-detail>
+                                    Zurück zu Aufträgen
+                                </button>
+                                <div class="job-order-card__section" data-job-detail-content></div>
+                            </section>
                         @else
                             <div class="job-order-card__empty">
                                 <p class="panel-card__eyebrow">Aktueller Auftrag</p>
@@ -213,53 +169,6 @@
                             </div>
                         @endif
                     </div>
-
-                    <div class="jobs-list" data-jobs-list>
-                        @if ($isJobsRemoteApiLoading)
-                            <article class="job-row job-row--empty">
-                                <span>
-                                    <strong>Jobs werden geladen ...</strong>
-                                    <small>Die Auftragsdaten werden vom Backend abgerufen.</small>
-                                </span>
-                            </article>
-                        @else
-                            @forelse ($initialJobs['matching_uids'] as $matchingUid)
-                                <button
-                                    class="job-row {{ $matchingUid['has_track_assignment'] ? '' : 'job-row--muted' }}"
-                                    type="button"
-                                    data-select-job-uid="{{ $matchingUid['uid'] }}"
-                                >
-                                    <span>
-                                        <strong>{{ $matchingUid['uid'] }}</strong>
-                                        <small>PEText1 {{ $matchingUid['etikinterface_pe_text1'] }}</small>
-                                    </span>
-                                    <span>
-                                        <strong>{{ $matchingUid['track_id'] ? 'Track '.$matchingUid['track_id'] : 'Kein Track' }}</strong>
-                                        <small>{{ $matchingUid['state'] }}</small>
-                                    </span>
-                                </button>
-                            @empty
-                                <article class="job-row job-row--empty">
-                                    <span>
-                                        <strong>Keine passende UID</strong>
-                                        <small>Im aktuellen Kühlhausbestand wurde noch kein Treffer gefunden.</small>
-                                    </span>
-                                </article>
-                            @endforelse
-                        @endif
-                    </div>
-
-                    <p class="panel-card__muted jobs-panel__status" data-job-status>
-                        @if ($isJobsRemoteApiLoading)
-                            Jobs werden geladen ...
-                        @elseif (! $initialOrder)
-                            Für diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.
-                        @elseif (count($initialJobs['matching_uids']) === 0)
-                            Kein passender UID-Bestand im Kühlhaus gefunden.
-                        @else
-                            {{ count($initialJobs['matching_uids']) }} passende UID(s) im Kühlhaus gefunden.
-                        @endif
-                    </p>
                 </article>
             </section>
         </section>
