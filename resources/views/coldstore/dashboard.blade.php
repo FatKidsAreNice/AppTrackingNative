@@ -143,18 +143,18 @@
                         </div>
                     </div>
 
-                    <div class="jobs-panel__meta" data-job-summary>
+                    <div class="jobs-panel__meta" data-job-summary hidden aria-hidden="true">
                         <article class="jobs-stat">
-                            <span class="jobs-stat__label">Ausgewählte Linie</span>
-                            <strong class="jobs-stat__value" data-job-selected-line>Linie {{ $initialJobs['selected_line'] }}</strong>
+                            <span class="jobs-stat__label"></span>
+                            <strong class="jobs-stat__value" data-job-selected-line></strong>
                         </article>
                         <article class="jobs-stat">
-                            <span class="jobs-stat__label">Arbeitsplatz</span>
-                            <strong class="jobs-stat__value" data-job-workplace>{{ $initialJobs['arbeitsplatz_nr'] }}</strong>
+                            <span class="jobs-stat__label"></span>
+                            <strong class="jobs-stat__value" data-job-workplace></strong>
                         </article>
                         <article class="jobs-stat">
-                            <span class="jobs-stat__label">Datenquelle</span>
-                            <strong class="jobs-stat__value" data-job-source>{{ $initialJobs['meta']['source_mode'] }}</strong>
+                            <span class="jobs-stat__label"></span>
+                            <strong class="jobs-stat__value" data-job-source></strong>
                         </article>
                     </div>
 

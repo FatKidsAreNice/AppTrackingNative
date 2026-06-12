@@ -48,9 +48,6 @@ function bootDashboard() {
     const jobsList = root.querySelector('[data-jobs-list]');
     const jobOrder = root.querySelector('[data-job-order]');
     const selectedLineLabel = root.querySelector('[data-selected-line-label]');
-    const selectedLineValue = root.querySelector('[data-job-selected-line]');
-    const selectedWorkplace = root.querySelector('[data-job-workplace]');
-    const selectedJobSource = root.querySelector('[data-job-source]');
     const coldstoreName = root.querySelector('[data-coldstore-name]');
     const coldstoreSummary = root.querySelector('[data-coldstore-summary]');
     const dashboardScreens = root.querySelectorAll('[data-dashboard-screen]');
@@ -449,23 +446,6 @@ function bootDashboard() {
         });
     }
 
-    function renderJobMeta() {
-        const activeLineOption = selectedLineOption();
-        const selectedLine = Number(state.jobsData.selected_line);
-
-        if (selectedLineValue) {
-            selectedLineValue.textContent = activeLineOption?.label ?? `Linie ${selectedLine}`;
-        }
-
-        if (selectedWorkplace) {
-            selectedWorkplace.textContent = String(state.jobsData.arbeitsplatz_nr ?? '-');
-        }
-
-        if (selectedJobSource) {
-            selectedJobSource.textContent = state.jobsData.meta?.source_mode ?? 'unknown';
-        }
-    }
-
     function renderJobOrder() {
         const order = state.jobsData.order;
         const nextOrder = state.jobsData.next_order;
@@ -842,7 +822,6 @@ function bootDashboard() {
         renderMeta();
         renderDashboardScreens();
         renderLinePicker();
-        renderJobMeta();
         renderJobOrder();
         renderJobs();
         renderMap();
