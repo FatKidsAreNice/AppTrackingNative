@@ -25,6 +25,8 @@ it('renders the overview dashboard with local jobs api config', function () {
         ->assertSee('Linie 6')
         ->assertSee('Arbeitsplatz')
         ->assertSee('Required_PEText1')
+        ->assertSee('Menge')
+        ->assertSee('123,45 kg')
         ->assertSee('"dataSource":"local"', false)
         ->assertSee('"jobsPath":"\\/api\\/coldstore\\/jobs"', false)
         ->assertSee('data-select-dashboard-screen="overview"', false)

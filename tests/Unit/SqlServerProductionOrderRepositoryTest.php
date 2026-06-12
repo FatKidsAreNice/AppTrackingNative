@@ -10,6 +10,7 @@ it('exposes the expected sql server query', function () {
     expect($sql)->toContain('SELECT TOP (2)')
         ->and($sql)->toContain('INNER JOIN MatStamm')
         ->and($sql)->toContain('v.VA_Status = 2')
+        ->and($sql)->toContain('v.VA_Mengekg')
         ->and($sql)->toContain('v.Arbeitsplatz_Nr = ?')
         ->and($sql)->toContain('CASE WHEN v.VA_BeginnSoll IS NULL THEN 1 ELSE 0 END')
         ->and($sql)->toContain('v.VA_BeginnSoll ASC')
@@ -31,7 +32,9 @@ it('mock production orders include current and following orders for a workplace'
 
     expect($orders)->toHaveCount(2)
         ->and($orders[0]['va_auftragsnr'])->toBe('4711-06')
+        ->and($orders[0]['va_menge_kg'])->toBe(123.45)
         ->and($orders[1]['va_auftragsnr'])->toBe('4711-06-F')
+        ->and($orders[1]['va_menge_kg'])->toBe(98.7)
         ->and($repository->nextOpenOrderForWorkplace(3506)['va_auftragsnr'])->toBe('4711-06');
 });
 
@@ -48,6 +51,7 @@ it('maps a sql server row to the existing order payload shape', function () {
         'MatStamm_MatNr' => ' 100006 ',
         'MatStamm_MaktX' => ' Beispielauftrag Linie 6 ',
         'MatStamm_FuellArtNr' => ' F5106 ',
+        'VA_Mengekg' => 123.45,
         'VA_BeginnSoll' => '2026-06-11 08:00:00',
         'VA_BeginnIst' => null,
         'VA_EndeSoll' => '2026-06-11 10:00:00',
@@ -61,6 +65,7 @@ it('maps a sql server row to the existing order payload shape', function () {
         'matstamm_matnr' => '100006',
         'matstamm_maktx' => 'Beispielauftrag Linie 6',
         'matstamm_fuellartnr' => 'F5106',
+        'va_menge_kg' => 123.45,
         'va_beginn_soll' => '2026-06-11 08:00:00',
         'va_beginn_ist' => null,
         'va_ende_soll' => '2026-06-11 10:00:00',
@@ -81,6 +86,7 @@ it('maps two sql server rows as current and following open orders', function () 
                     'MatStamm_MatNr' => '100006',
                     'MatStamm_MaktX' => 'Beispielauftrag Linie 6',
                     'MatStamm_FuellArtNr' => 'F5106',
+                    'VA_Mengekg' => 123.45,
                     'VA_BeginnSoll' => '2026-06-11 08:00:00',
                     'VA_BeginnIst' => null,
                     'VA_EndeSoll' => null,
@@ -93,6 +99,7 @@ it('maps two sql server rows as current and following open orders', function () 
                     'MatStamm_MatNr' => '100106',
                     'MatStamm_MaktX' => 'Folgeauftrag Linie 6',
                     'MatStamm_FuellArtNr' => 'F1200',
+                    'VA_Mengekg' => null,
                     'VA_BeginnSoll' => '2026-06-11 10:15:00',
                     'VA_BeginnIst' => null,
                     'VA_EndeSoll' => null,
@@ -109,11 +116,13 @@ it('maps two sql server rows as current and following open orders', function () 
             'va_id' => 11006,
             'va_auftragsnr' => '4711-06',
             'matstamm_fuellartnr' => 'F5106',
+            'va_menge_kg' => 123.45,
         ])
         ->and($orders[1])->toMatchArray([
             'va_id' => 12006,
             'va_auftragsnr' => '4711-06-F',
             'matstamm_fuellartnr' => 'F1200',
+            'va_menge_kg' => null,
         ])
         ->and($repository->nextOpenOrderForWorkplace(3506))->toMatchArray([
             'va_id' => 11006,

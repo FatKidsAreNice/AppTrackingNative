@@ -11,7 +11,9 @@ it('returns a matching job payload for a line with a track linked uid', function
         ->assertJsonPath('selected_line', 6)
         ->assertJsonPath('arbeitsplatz_nr', 3506)
         ->assertJsonPath('order.required_pe_text1', '95106')
+        ->assertJsonPath('order.va_menge_kg', 123.45)
         ->assertJsonPath('next_order.required_pe_text1', '91200')
+        ->assertJsonPath('next_order.va_menge_kg', 98.7)
         ->assertJsonPath('matching_uids.0.uid', 'UID-L6-A')
         ->assertJsonPath('matching_uids.0.track_id', 101)
         ->assertJsonPath('next_matching_uids.0.uid', 'UID-L1-A');
@@ -35,6 +37,7 @@ it('returns a line with order but without matching inventory hit', function () {
     $response->assertSuccessful()
         ->assertJsonPath('selected_line', 2)
         ->assertJsonPath('order.required_pe_text1', '97777')
+        ->assertJsonPath('order.va_menge_kg', null)
         ->assertJsonPath('next_order', null)
         ->assertJsonCount(0, 'next_matching_uids')
         ->assertJsonCount(0, 'matching_uids');

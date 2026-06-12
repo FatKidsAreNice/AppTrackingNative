@@ -169,6 +169,8 @@
                                     <dd>{{ $initialOrder['matstamm_fuellartnr'] }}</dd>
                                     <dt>Required_PEText1</dt>
                                     <dd>{{ $initialOrder['required_pe_text1'] }}</dd>
+                                    <dt>Menge</dt>
+                                    <dd>{{ $initialOrder['va_menge_kg'] !== null ? number_format((float) $initialOrder['va_menge_kg'], 2, ',', '.').' kg' : 'unbekannt' }}</dd>
                                     <dt>Beginn Soll</dt>
                                     <dd>{{ $initialOrder['va_beginn_soll'] }}</dd>
                                 </dl>
@@ -192,6 +194,8 @@
                                         <dd>{{ $initialNextOrder['matstamm_fuellartnr'] }}</dd>
                                         <dt>Required_PEText1</dt>
                                         <dd>{{ $initialNextOrder['required_pe_text1'] }}</dd>
+                                        <dt>Menge</dt>
+                                        <dd>{{ $initialNextOrder['va_menge_kg'] !== null ? number_format((float) $initialNextOrder['va_menge_kg'], 2, ',', '.').' kg' : 'unbekannt' }}</dd>
                                         <dt>Beginn Soll</dt>
                                         <dd>{{ $initialNextOrder['va_beginn_soll'] }}</dd>
                                     </dl>

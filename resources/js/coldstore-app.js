@@ -522,12 +522,25 @@ function bootDashboard() {
                     <dd>${order.matstamm_fuellartnr}</dd>
                     <dt>Required_PEText1</dt>
                     <dd>${order.required_pe_text1}</dd>
+                    <dt>Menge</dt>
+                    <dd>${formatOrderQuantity(order.va_menge_kg)}</dd>
                     <dt>Beginn Soll</dt>
                     <dd>${order.va_beginn_soll}</dd>
                 </dl>
                 ${matchingUids === null ? '' : renderNextMatchingUids(matchingUids)}
             </section>
         `;
+    }
+
+    function formatOrderQuantity(quantity) {
+        if (quantity === null || quantity === undefined || Number.isNaN(Number(quantity))) {
+            return 'unbekannt';
+        }
+
+        return `${Number(quantity).toLocaleString('de-DE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        })} kg`;
     }
 
     function renderNextMatchingUids(matchingUids) {
