@@ -102,6 +102,8 @@
             <section class="jobs-panel">
                 <article class="panel-card">
                     @php($initialOrder = $initialJobs['order'])
+                    @php($initialNextOrder = $initialJobs['next_order'] ?? null)
+                    @php($initialNextMatchingUids = $initialJobs['next_matching_uids'] ?? [])
                     @php($isJobsRemoteApiLoading = (bool) data_get($initialJobs, 'meta.loading', false))
                     <div class="panel-card__header">
                         <div>
@@ -146,32 +148,75 @@
                     <div class="job-order-card" data-job-order>
                         @if ($isJobsRemoteApiLoading)
                             <div class="job-order-card__empty">
-                                <p class="panel-card__eyebrow">Nächster Auftrag</p>
+                                <p class="panel-card__eyebrow">Aktueller Auftrag</p>
                                 <p>Jobs werden geladen ...</p>
                             </div>
                         @elseif ($initialOrder)
-                            <div class="job-order-card__header">
-                                <div>
-                                    <p class="panel-card__eyebrow">Nächster Auftrag</p>
-                                    <h3 class="panel-card__title">{{ $initialOrder['va_auftragsnr'] }}</h3>
+                            <section class="job-order-card__section">
+                                <div class="job-order-card__header">
+                                    <div>
+                                        <p class="panel-card__eyebrow">Aktueller Auftrag</p>
+                                        <h3 class="panel-card__title">{{ $initialOrder['va_auftragsnr'] }}</h3>
+                                    </div>
+                                    <span class="status-pill status-pill--ok">VA_Status {{ $initialOrder['va_status'] }}</span>
                                 </div>
-                                <span class="status-pill status-pill--ok">VA_Status {{ $initialOrder['va_status'] }}</span>
-                            </div>
-                            <dl class="detail-grid detail-grid--compact">
-                                <dt>Artikel</dt>
-                                <dd>{{ $initialOrder['matstamm_maktx'] }}</dd>
-                                <dt>MatStamm MatNr</dt>
-                                <dd>{{ $initialOrder['matstamm_matnr'] }}</dd>
-                                <dt>FuellArtNr</dt>
-                                <dd>{{ $initialOrder['matstamm_fuellartnr'] }}</dd>
-                                <dt>Required PEText1</dt>
-                                <dd>{{ $initialOrder['required_pe_text1'] }}</dd>
-                                <dt>Beginn Soll</dt>
-                                <dd>{{ $initialOrder['va_beginn_soll'] }}</dd>
-                            </dl>
+                                <dl class="detail-grid detail-grid--compact">
+                                    <dt>Produktname</dt>
+                                    <dd>{{ $initialOrder['matstamm_maktx'] }}</dd>
+                                    <dt>MatStamm MatNr</dt>
+                                    <dd>{{ $initialOrder['matstamm_matnr'] }}</dd>
+                                    <dt>MatStamm_FuellArtNr</dt>
+                                    <dd>{{ $initialOrder['matstamm_fuellartnr'] }}</dd>
+                                    <dt>Required_PEText1</dt>
+                                    <dd>{{ $initialOrder['required_pe_text1'] }}</dd>
+                                    <dt>Beginn Soll</dt>
+                                    <dd>{{ $initialOrder['va_beginn_soll'] }}</dd>
+                                </dl>
+                            </section>
+
+                            @if ($initialNextOrder)
+                                <section class="job-order-card__section">
+                                    <div class="job-order-card__header">
+                                        <div>
+                                            <p class="panel-card__eyebrow">Folgeauftrag</p>
+                                            <h3 class="panel-card__title">{{ $initialNextOrder['va_auftragsnr'] }}</h3>
+                                        </div>
+                                        <span class="status-pill status-pill--ok">VA_Status {{ $initialNextOrder['va_status'] }}</span>
+                                    </div>
+                                    <dl class="detail-grid detail-grid--compact">
+                                        <dt>Produktname</dt>
+                                        <dd>{{ $initialNextOrder['matstamm_maktx'] }}</dd>
+                                        <dt>MatStamm MatNr</dt>
+                                        <dd>{{ $initialNextOrder['matstamm_matnr'] }}</dd>
+                                        <dt>MatStamm_FuellArtNr</dt>
+                                        <dd>{{ $initialNextOrder['matstamm_fuellartnr'] }}</dd>
+                                        <dt>Required_PEText1</dt>
+                                        <dd>{{ $initialNextOrder['required_pe_text1'] }}</dd>
+                                        <dt>Beginn Soll</dt>
+                                        <dd>{{ $initialNextOrder['va_beginn_soll'] }}</dd>
+                                    </dl>
+                                    @if (count($initialNextMatchingUids) > 0)
+                                        <div class="job-order-card__matches">
+                                            @foreach ($initialNextMatchingUids as $matchingUid)
+                                                <span>
+                                                    <strong>{{ $matchingUid['uid'] }}</strong>
+                                                    <small>PEText1 {{ $matchingUid['etikinterface_pe_text1'] }}</small>
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <p class="panel-card__muted job-order-card__note">Keine passende UID fuer den Folgeauftrag gefunden.</p>
+                                    @endif
+                                </section>
+                            @else
+                                <section class="job-order-card__section job-order-card__empty">
+                                    <p class="panel-card__eyebrow">Folgeauftrag</p>
+                                    <p>Kein freigegebener Folgeauftrag vorhanden</p>
+                                </section>
+                            @endif
                         @else
                             <div class="job-order-card__empty">
-                                <p class="panel-card__eyebrow">Nächster Auftrag</p>
+                                <p class="panel-card__eyebrow">Aktueller Auftrag</p>
                                 <p>Für diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.</p>
                             </div>
                         @endif

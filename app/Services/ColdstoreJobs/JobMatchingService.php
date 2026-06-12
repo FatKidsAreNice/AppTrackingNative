@@ -27,7 +27,30 @@ class JobMatchingService
      *         va_ende_soll: ?string,
      *         va_ende_ist: ?string
      *     }|null,
+     *     next_order: array{
+     *         va_id: int,
+     *         va_auftragsnr: string,
+     *         va_status: int,
+     *         matstamm_matnr: string,
+     *         matstamm_maktx: string,
+     *         matstamm_fuellartnr: string,
+     *         required_pe_text1: string,
+     *         va_beginn_soll: string,
+     *         va_beginn_ist: ?string,
+     *         va_ende_soll: ?string,
+     *         va_ende_ist: ?string
+     *     }|null,
      *     matching_uids: array<int, array{
+     *         uid: string,
+     *         track_id: ?int,
+     *         etikinterface_id: ?int,
+     *         etikinterface_pe_text1: string,
+     *         fuellartnr: ?string,
+     *         position: array{x: float, y: float}|null,
+     *         state: string,
+     *         has_track_assignment: bool
+     *     }>,
+     *     next_matching_uids: array<int, array{
      *         uid: string,
      *         track_id: ?int,
      *         etikinterface_id: ?int,
@@ -45,43 +68,85 @@ class JobMatchingService
     public function payloadForLine(int $selectedLine): array
     {
         $workplaceNumber = $this->lineWorkplaceMapper->workplaceNumberForLine($selectedLine);
-        $order = $this->productionOrderRepository->nextOpenOrderForWorkplace($workplaceNumber);
+        $orders = $this->productionOrderRepository->openOrdersForWorkplace($workplaceNumber, 2);
+        $order = $orders[0] ?? null;
+        $nextOrder = $orders[1] ?? null;
 
         if ($order === null) {
             return [
                 'selected_line' => $selectedLine,
                 'arbeitsplatz_nr' => $workplaceNumber,
                 'order' => null,
+                'next_order' => null,
                 'matching_uids' => [],
+                'next_matching_uids' => [],
                 'meta' => [
                     'source_mode' => $this->sourceMode(),
                 ],
             ];
         }
 
-        $matstammFuellArtNr = trim((string) $order['matstamm_fuellartnr']);
-        $requiredPeText1 = $this->requiredPeText1ForFuellArtNr($matstammFuellArtNr);
+        $normalizedOrder = $this->normalizeOrder($order);
+        $normalizedNextOrder = $nextOrder === null ? null : $this->normalizeOrder($nextOrder);
 
         return [
             'selected_line' => $selectedLine,
             'arbeitsplatz_nr' => $workplaceNumber,
-            'order' => [
-                'va_id' => (int) $order['va_id'],
-                'va_auftragsnr' => trim((string) $order['va_auftragsnr']),
-                'va_status' => (int) $order['va_status'],
-                'matstamm_matnr' => trim((string) $order['matstamm_matnr']),
-                'matstamm_maktx' => trim((string) $order['matstamm_maktx']),
-                'matstamm_fuellartnr' => $matstammFuellArtNr,
-                'required_pe_text1' => $requiredPeText1,
-                'va_beginn_soll' => trim((string) $order['va_beginn_soll']),
-                'va_beginn_ist' => $order['va_beginn_ist'] ? trim((string) $order['va_beginn_ist']) : null,
-                'va_ende_soll' => $order['va_ende_soll'] ? trim((string) $order['va_ende_soll']) : null,
-                'va_ende_ist' => $order['va_ende_ist'] ? trim((string) $order['va_ende_ist']) : null,
-            ],
-            'matching_uids' => $this->matchingInventory($requiredPeText1),
+            'order' => $normalizedOrder,
+            'next_order' => $normalizedNextOrder,
+            'matching_uids' => $this->matchingInventory($normalizedOrder['required_pe_text1']),
+            'next_matching_uids' => $normalizedNextOrder === null
+                ? []
+                : $this->matchingInventory($normalizedNextOrder['required_pe_text1']),
             'meta' => [
                 'source_mode' => $this->sourceMode(),
             ],
+        ];
+    }
+
+    /**
+     * @param  array{
+     *     va_id: int,
+     *     va_auftragsnr: string,
+     *     va_status: int,
+     *     matstamm_matnr: string,
+     *     matstamm_maktx: string,
+     *     matstamm_fuellartnr: string,
+     *     va_beginn_soll: string,
+     *     va_beginn_ist: ?string,
+     *     va_ende_soll: ?string,
+     *     va_ende_ist: ?string
+     * } $order
+     * @return array{
+     *     va_id: int,
+     *     va_auftragsnr: string,
+     *     va_status: int,
+     *     matstamm_matnr: string,
+     *     matstamm_maktx: string,
+     *     matstamm_fuellartnr: string,
+     *     required_pe_text1: string,
+     *     va_beginn_soll: string,
+     *     va_beginn_ist: ?string,
+     *     va_ende_soll: ?string,
+     *     va_ende_ist: ?string
+     * }
+     */
+    private function normalizeOrder(array $order): array
+    {
+        $matstammFuellArtNr = trim((string) $order['matstamm_fuellartnr']);
+
+        return [
+            'va_id' => (int) $order['va_id'],
+            'va_auftragsnr' => trim((string) $order['va_auftragsnr']),
+            'va_status' => (int) $order['va_status'],
+            'matstamm_matnr' => trim((string) $order['matstamm_matnr']),
+            'matstamm_maktx' => trim((string) $order['matstamm_maktx']),
+            'matstamm_fuellartnr' => $matstammFuellArtNr,
+            'required_pe_text1' => $this->requiredPeText1ForFuellArtNr($matstammFuellArtNr),
+            'va_beginn_soll' => trim((string) $order['va_beginn_soll']),
+            'va_beginn_ist' => $order['va_beginn_ist'] ? trim((string) $order['va_beginn_ist']) : null,
+            'va_ende_soll' => $order['va_ende_soll'] ? trim((string) $order['va_ende_soll']) : null,
+            'va_ende_ist' => $order['va_ende_ist'] ? trim((string) $order['va_ende_ist']) : null,
         ];
     }
 

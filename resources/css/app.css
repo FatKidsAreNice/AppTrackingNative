@@ -267,6 +267,7 @@ body.coldstore-body {
 .panel-card__muted,
 .track-row small,
 .job-row small,
+.job-order-card__matches small,
 .stack-item small,
 .section-card__note {
     color: #5b6877;
@@ -369,6 +370,32 @@ body.coldstore-body {
     display: grid;
     gap: 0.45rem;
     color: #344256;
+}
+
+.job-order-card__section + .job-order-card__section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #dde5ec;
+}
+
+.job-order-card__note {
+    margin-top: 0.85rem;
+}
+
+.job-order-card__matches {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 0.85rem;
+}
+
+.job-order-card__matches span {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #dde5ec;
+    border-radius: 0.75rem;
+    background: #f8fafc;
 }
 
 .detail-grid--compact {

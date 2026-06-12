@@ -163,7 +163,9 @@ function bootDashboard() {
             selected_line: selectedLine,
             arbeitsplatz_nr: jobsWorkplaceNumberForLine(selectedLine),
             order: null,
+            next_order: null,
             matching_uids: [],
+            next_matching_uids: [],
             meta: {
                 source_mode: jobsApi.dataSource === 'remote_api' ? 'remote_api' : 'local',
                 loading: true,
@@ -176,7 +178,9 @@ function bootDashboard() {
             selected_line: selectedLine,
             arbeitsplatz_nr: jobsWorkplaceNumberForLine(selectedLine),
             order: null,
+            next_order: null,
             matching_uids: [],
+            next_matching_uids: [],
             meta: {
                 source_mode: jobsApi.dataSource === 'remote_api' ? 'remote_api' : 'local',
             },
@@ -464,6 +468,8 @@ function bootDashboard() {
 
     function renderJobOrder() {
         const order = state.jobsData.order;
+        const nextOrder = state.jobsData.next_order;
+        const nextMatchingUids = state.jobsData.next_matching_uids ?? [];
 
         if (!jobOrder) {
             return;
@@ -472,7 +478,7 @@ function bootDashboard() {
         if (state.jobsLoading) {
             jobOrder.innerHTML = `
                 <div class="job-order-card__empty">
-                    <p class="panel-card__eyebrow">Nächster Auftrag</p>
+                    <p class="panel-card__eyebrow">Aktueller Auftrag</p>
                     <p>Jobs werden geladen ...</p>
                 </div>
             `;
@@ -483,7 +489,7 @@ function bootDashboard() {
         if (!order) {
             jobOrder.innerHTML = `
                 <div class="job-order-card__empty">
-                    <p class="panel-card__eyebrow">Nächster Auftrag</p>
+                    <p class="panel-card__eyebrow">Aktueller Auftrag</p>
                     <p>Für diese Linie liegt aktuell kein offener Auftrag mit VA_Status 2 vor.</p>
                 </div>
             `;
@@ -492,25 +498,63 @@ function bootDashboard() {
         }
 
         jobOrder.innerHTML = `
-            <div class="job-order-card__header">
-                <div>
-                    <p class="panel-card__eyebrow">Nächster Auftrag</p>
-                    <h3 class="panel-card__title">${order.va_auftragsnr}</h3>
+            ${renderOrderSection(order, 'Aktueller Auftrag')}
+            ${nextOrder ? renderOrderSection(nextOrder, 'Folgeauftrag', nextMatchingUids) : renderNoNextOrder()}
+        `;
+    }
+
+    function renderOrderSection(order, label, matchingUids = null) {
+        return `
+            <section class="job-order-card__section">
+                <div class="job-order-card__header">
+                    <div>
+                        <p class="panel-card__eyebrow">${label}</p>
+                        <h3 class="panel-card__title">${order.va_auftragsnr}</h3>
+                    </div>
+                    <span class="status-pill status-pill--ok">VA_Status ${order.va_status}</span>
                 </div>
-                <span class="status-pill status-pill--ok">VA_Status ${order.va_status}</span>
+                <dl class="detail-grid detail-grid--compact">
+                    <dt>Produktname</dt>
+                    <dd>${order.matstamm_maktx}</dd>
+                    <dt>MatStamm MatNr</dt>
+                    <dd>${order.matstamm_matnr}</dd>
+                    <dt>MatStamm_FuellArtNr</dt>
+                    <dd>${order.matstamm_fuellartnr}</dd>
+                    <dt>Required_PEText1</dt>
+                    <dd>${order.required_pe_text1}</dd>
+                    <dt>Beginn Soll</dt>
+                    <dd>${order.va_beginn_soll}</dd>
+                </dl>
+                ${matchingUids === null ? '' : renderNextMatchingUids(matchingUids)}
+            </section>
+        `;
+    }
+
+    function renderNextMatchingUids(matchingUids) {
+        if (matchingUids.length === 0) {
+            return '<p class="panel-card__muted job-order-card__note">Keine passende UID fuer den Folgeauftrag gefunden.</p>';
+        }
+
+        return `
+            <div class="job-order-card__matches">
+                ${matchingUids
+            .map((matchingUid) => `
+                        <span>
+                            <strong>${matchingUid.uid}</strong>
+                            <small>PEText1 ${matchingUid.etikinterface_pe_text1}</small>
+                        </span>
+                    `)
+            .join('')}
             </div>
-            <dl class="detail-grid detail-grid--compact">
-                <dt>Artikel</dt>
-                <dd>${order.matstamm_maktx}</dd>
-                <dt>MatStamm MatNr</dt>
-                <dd>${order.matstamm_matnr}</dd>
-                <dt>FuellArtNr</dt>
-                <dd>${order.matstamm_fuellartnr}</dd>
-                <dt>Required PEText1</dt>
-                <dd>${order.required_pe_text1}</dd>
-                <dt>Beginn Soll</dt>
-                <dd>${order.va_beginn_soll}</dd>
-            </dl>
+        `;
+    }
+
+    function renderNoNextOrder() {
+        return `
+            <section class="job-order-card__section job-order-card__empty">
+                <p class="panel-card__eyebrow">Folgeauftrag</p>
+                <p>Kein freigegebener Folgeauftrag vorhanden</p>
+            </section>
         `;
     }
 

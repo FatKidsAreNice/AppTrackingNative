@@ -15,12 +15,19 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
 
             public function nextOpenOrderForWorkplace(int $workplaceNumber): ?array
             {
+                return $this->openOrdersForWorkplace($workplaceNumber, 1)[0] ?? null;
+            }
+
+            public function openOrdersForWorkplace(int $workplaceNumber, int $limit = 2): array
+            {
                 if ($this->orderOverride !== null) {
-                    return $this->orderOverride;
+                    $orders = array_is_list($this->orderOverride) ? $this->orderOverride : [$this->orderOverride];
+
+                    return array_slice($orders, 0, $limit);
                 }
 
-                return match ($workplaceNumber) {
-                    3502 => [
+                $order = match ($workplaceNumber) {
+                    3502 => [[
                         'va_id' => 11002,
                         'va_auftragsnr' => '4711-02',
                         'va_status' => 2,
@@ -31,9 +38,9 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
                         'va_beginn_ist' => null,
                         'va_ende_soll' => null,
                         'va_ende_ist' => null,
-                    ],
-                    3503 => null,
-                    3504 => [
+                    ]],
+                    3503 => [],
+                    3504 => [[
                         'va_id' => 11004,
                         'va_auftragsnr' => '4711-04',
                         'va_status' => 2,
@@ -44,8 +51,8 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
                         'va_beginn_ist' => null,
                         'va_ende_soll' => null,
                         'va_ende_ist' => null,
-                    ],
-                    3505 => [
+                    ]],
+                    3505 => [[
                         'va_id' => 11005,
                         'va_auftragsnr' => '4711-05',
                         'va_status' => 2,
@@ -56,8 +63,8 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
                         'va_beginn_ist' => null,
                         'va_ende_soll' => null,
                         'va_ende_ist' => null,
-                    ],
-                    default => [
+                    ]],
+                    default => [[
                         'va_id' => 11006,
                         'va_auftragsnr' => '4711-06',
                         'va_status' => 2,
@@ -68,8 +75,10 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
                         'va_beginn_ist' => null,
                         'va_ende_soll' => null,
                         'va_ende_ist' => null,
-                    ],
+                    ]],
                 };
+
+                return array_slice($order, 0, $limit);
             }
 
             public function sourceMode(): string
@@ -156,6 +165,8 @@ it('returns a matching uid with track assignment for the default mock line', fun
     expect($payload['arbeitsplatz_nr'])->toBe(3506)
         ->and($payload['order']['matstamm_fuellartnr'])->toBe('F5106')
         ->and($payload['order']['required_pe_text1'])->toBe('95106')
+        ->and($payload['next_order'])->toBeNull()
+        ->and($payload['next_matching_uids'])->toBe([])
         ->and($payload['matching_uids'])->toHaveCount(1)
         ->and($payload['matching_uids'][0])->toMatchArray([
             'uid' => 'UID-L6-A',
@@ -163,6 +174,68 @@ it('returns a matching uid with track assignment for the default mock line', fun
             'etikinterface_pe_text1' => '95106',
             'has_track_assignment' => true,
         ]);
+});
+
+it('returns a current order and a following order with separate inventory matches', function () {
+    $payload = makeJobMatchingService(
+        [
+            [
+                'va_id' => 1,
+                'va_auftragsnr' => 'CURRENT',
+                'va_status' => 2,
+                'matstamm_matnr' => '100001',
+                'matstamm_maktx' => 'Current product',
+                'matstamm_fuellartnr' => 'F5106',
+                'va_beginn_soll' => '2026-06-11T08:00:00',
+                'va_beginn_ist' => null,
+                'va_ende_soll' => null,
+                'va_ende_ist' => null,
+            ],
+            [
+                'va_id' => 2,
+                'va_auftragsnr' => 'NEXT',
+                'va_status' => 2,
+                'matstamm_matnr' => '100002',
+                'matstamm_maktx' => 'Next product',
+                'matstamm_fuellartnr' => 'F1200',
+                'va_beginn_soll' => '2026-06-11T10:00:00',
+                'va_beginn_ist' => null,
+                'va_ende_soll' => null,
+                'va_ende_ist' => null,
+            ],
+        ],
+        [
+            [
+                'uid' => 'UID-CURRENT',
+                'track_id' => 10,
+                'etikinterface_id' => 100,
+                'etikinterface_pe_text1' => '95106',
+                'fuellartnr' => 'F5106',
+                'position' => null,
+                'state' => 'in_coldstore',
+                'scanned_at' => '2026-06-11T08:10:00',
+                'last_seen_at' => '2026-06-11T08:10:00',
+            ],
+            [
+                'uid' => 'UID-NEXT',
+                'track_id' => 20,
+                'etikinterface_id' => 200,
+                'etikinterface_pe_text1' => '91200',
+                'fuellartnr' => 'F1200',
+                'position' => null,
+                'state' => 'reserved',
+                'scanned_at' => '2026-06-11T08:20:00',
+                'last_seen_at' => '2026-06-11T08:20:00',
+            ],
+        ],
+    )->payloadForLine(6);
+
+    expect($payload['order']['va_auftragsnr'])->toBe('CURRENT')
+        ->and($payload['next_order']['va_auftragsnr'])->toBe('NEXT')
+        ->and($payload['matching_uids'])->toHaveCount(1)
+        ->and($payload['matching_uids'][0]['uid'])->toBe('UID-CURRENT')
+        ->and($payload['next_matching_uids'])->toHaveCount(1)
+        ->and($payload['next_matching_uids'][0]['uid'])->toBe('UID-NEXT');
 });
 
 it('returns no matching uid when the order has no current coldstore hit', function () {
@@ -177,6 +250,7 @@ it('returns no order when the selected line has no open production order', funct
 
     expect($payload['arbeitsplatz_nr'])->toBe(3503)
         ->and($payload['order'])->toBeNull()
+        ->and($payload['next_order'])->toBeNull()
         ->and($payload['matching_uids'])->toBe([]);
 });
 

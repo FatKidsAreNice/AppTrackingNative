@@ -7,7 +7,7 @@ use Illuminate\Database\QueryException;
 it('exposes the expected sql server query', function () {
     $sql = (new SqlServerProductionOrderRepository('coldstore_sqlsrv'))->sql();
 
-    expect($sql)->toContain('SELECT TOP (1)')
+    expect($sql)->toContain('SELECT TOP (2)')
         ->and($sql)->toContain('INNER JOIN MatStamm')
         ->and($sql)->toContain('v.VA_Status = 2')
         ->and($sql)->toContain('v.Arbeitsplatz_Nr = ?')
@@ -22,6 +22,22 @@ it('normalizes required pe text1 from fuellart numbers', function () {
 
     expect($repository->requiredPeText1FromFuellArtNr(' F5106 '))->toBe('95106')
         ->and($repository->requiredPeText1FromFuellArtNr('95106'))->toBe('95106');
+});
+
+it('mock production orders include current and following orders for a workplace', function () {
+    $repository = new MockProductionOrderRepository;
+
+    $orders = $repository->openOrdersForWorkplace(3506);
+
+    expect($orders)->toHaveCount(2)
+        ->and($orders[0]['va_auftragsnr'])->toBe('4711-06')
+        ->and($orders[1]['va_auftragsnr'])->toBe('4711-06-F')
+        ->and($repository->nextOpenOrderForWorkplace(3506)['va_auftragsnr'])->toBe('4711-06');
+});
+
+it('limits mock production orders to the requested count', function () {
+    expect((new MockProductionOrderRepository)->openOrdersForWorkplace(3506, 1))
+        ->toHaveCount(1);
 });
 
 it('maps a sql server row to the existing order payload shape', function () {
@@ -52,10 +68,63 @@ it('maps a sql server row to the existing order payload shape', function () {
     ]);
 });
 
+it('maps two sql server rows as current and following open orders', function () {
+    $repository = new class extends SqlServerProductionOrderRepository
+    {
+        protected function fetchRows(int $workplaceNumber, int $limit = 2): array
+        {
+            return [
+                (object) [
+                    'VA_ID' => 11006,
+                    'VA_Auftragsnr' => '4711-06',
+                    'VA_Status' => 2,
+                    'MatStamm_MatNr' => '100006',
+                    'MatStamm_MaktX' => 'Beispielauftrag Linie 6',
+                    'MatStamm_FuellArtNr' => 'F5106',
+                    'VA_BeginnSoll' => '2026-06-11 08:00:00',
+                    'VA_BeginnIst' => null,
+                    'VA_EndeSoll' => null,
+                    'VA_EndeIst' => null,
+                ],
+                (object) [
+                    'VA_ID' => 12006,
+                    'VA_Auftragsnr' => '4711-06-F',
+                    'VA_Status' => 2,
+                    'MatStamm_MatNr' => '100106',
+                    'MatStamm_MaktX' => 'Folgeauftrag Linie 6',
+                    'MatStamm_FuellArtNr' => 'F1200',
+                    'VA_BeginnSoll' => '2026-06-11 10:15:00',
+                    'VA_BeginnIst' => null,
+                    'VA_EndeSoll' => null,
+                    'VA_EndeIst' => null,
+                ],
+            ];
+        }
+    };
+
+    $orders = $repository->openOrdersForWorkplace(3506);
+
+    expect($orders)->toHaveCount(2)
+        ->and($orders[0])->toMatchArray([
+            'va_id' => 11006,
+            'va_auftragsnr' => '4711-06',
+            'matstamm_fuellartnr' => 'F5106',
+        ])
+        ->and($orders[1])->toMatchArray([
+            'va_id' => 12006,
+            'va_auftragsnr' => '4711-06-F',
+            'matstamm_fuellartnr' => 'F1200',
+        ])
+        ->and($repository->nextOpenOrderForWorkplace(3506))->toMatchArray([
+            'va_id' => 11006,
+            'va_auftragsnr' => '4711-06',
+        ]);
+});
+
 it('falls back to the mock repository when the sql server query fails', function () {
     $repository = new class extends SqlServerProductionOrderRepository
     {
-        protected function fetchRow(int $workplaceNumber): mixed
+        protected function fetchRows(int $workplaceNumber, int $limit = 2): array
         {
             throw new QueryException(
                 'coldstore_sqlsrv',

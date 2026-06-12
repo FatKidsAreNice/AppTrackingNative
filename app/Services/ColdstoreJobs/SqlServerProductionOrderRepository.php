@@ -39,8 +39,27 @@ class SqlServerProductionOrderRepository extends ProductionOrderRepository
      */
     public function nextOpenOrderForWorkplace(int $workplaceNumber): ?array
     {
+        return $this->openOrdersForWorkplace($workplaceNumber, 1)[0] ?? null;
+    }
+
+    /**
+     * @return array<int, array{
+     *     va_id: int,
+     *     va_auftragsnr: string,
+     *     va_status: int,
+     *     matstamm_matnr: string,
+     *     matstamm_maktx: string,
+     *     matstamm_fuellartnr: string,
+     *     va_beginn_soll: string,
+     *     va_beginn_ist: ?string,
+     *     va_ende_soll: ?string,
+     *     va_ende_ist: ?string
+     * }>
+     */
+    public function openOrdersForWorkplace(int $workplaceNumber, int $limit = 2): array
+    {
         try {
-            $row = $this->fetchRow($workplaceNumber);
+            $rows = $this->fetchRows($workplaceNumber, $limit);
         } catch (Throwable $throwable) {
             if (! $this->shouldFallbackToMock($throwable)) {
                 throw $throwable;
@@ -48,14 +67,15 @@ class SqlServerProductionOrderRepository extends ProductionOrderRepository
 
             $this->usedFallback = true;
 
-            return $this->fallbackRepository()->nextOpenOrderForWorkplace($workplaceNumber);
+            return $this->fallbackRepository()->openOrdersForWorkplace($workplaceNumber, $limit);
         }
 
-        if (! $row instanceof stdClass) {
-            return null;
-        }
-
-        return $this->mapRow($row);
+        return collect($rows)
+            ->filter(fn (mixed $row): bool => $row instanceof stdClass)
+            ->take($limit)
+            ->map(fn (stdClass $row): array => $this->mapRow($row))
+            ->values()
+            ->all();
     }
 
     public function sourceMode(): string
@@ -66,7 +86,7 @@ class SqlServerProductionOrderRepository extends ProductionOrderRepository
     public function sql(): string
     {
         return <<<'SQL'
-SELECT TOP (1)
+SELECT TOP (2)
     v.VA_ID,
     v.VA_Auftragsnr,
     v.VA_Status,
@@ -150,9 +170,12 @@ SQL;
         return app(MockProductionOrderRepository::class);
     }
 
-    protected function fetchRow(int $workplaceNumber): mixed
+    /**
+     * @return array<int, stdClass>
+     */
+    protected function fetchRows(int $workplaceNumber, int $limit = 2): array
     {
-        return $this->connection()->selectOne($this->sql(), [$workplaceNumber]);
+        return $this->connection()->select($this->sql(), [$workplaceNumber]);
     }
 
     private function shouldFallbackToMock(Throwable $throwable): bool

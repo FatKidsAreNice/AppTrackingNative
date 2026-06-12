@@ -11,8 +11,10 @@ it('returns a matching job payload for a line with a track linked uid', function
         ->assertJsonPath('selected_line', 6)
         ->assertJsonPath('arbeitsplatz_nr', 3506)
         ->assertJsonPath('order.required_pe_text1', '95106')
+        ->assertJsonPath('next_order.required_pe_text1', '91200')
         ->assertJsonPath('matching_uids.0.uid', 'UID-L6-A')
-        ->assertJsonPath('matching_uids.0.track_id', 101);
+        ->assertJsonPath('matching_uids.0.track_id', 101)
+        ->assertJsonPath('next_matching_uids.0.uid', 'UID-L1-A');
 });
 
 it('accepts line as an alias for selected line in the jobs api', function () {
@@ -33,6 +35,8 @@ it('returns a line with order but without matching inventory hit', function () {
     $response->assertSuccessful()
         ->assertJsonPath('selected_line', 2)
         ->assertJsonPath('order.required_pe_text1', '97777')
+        ->assertJsonPath('next_order', null)
+        ->assertJsonCount(0, 'next_matching_uids')
         ->assertJsonCount(0, 'matching_uids');
 });
 
@@ -45,6 +49,8 @@ it('returns a line without an open order', function () {
         ->assertJsonPath('selected_line', 3)
         ->assertJsonPath('arbeitsplatz_nr', 3503)
         ->assertJsonPath('order', null)
+        ->assertJsonPath('next_order', null)
+        ->assertJsonCount(0, 'next_matching_uids')
         ->assertJsonCount(0, 'matching_uids');
 });
 

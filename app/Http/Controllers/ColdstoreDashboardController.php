@@ -45,7 +45,9 @@ class ColdstoreDashboardController extends Controller
      *     selected_line: int,
      *     arbeitsplatz_nr: int,
      *     order: null,
+     *     next_order: null,
      *     matching_uids: array<int, mixed>,
+     *     next_matching_uids: array<int, mixed>,
      *     meta: array{
      *         source_mode: string,
      *         loading: bool
@@ -58,7 +60,9 @@ class ColdstoreDashboardController extends Controller
             'selected_line' => $defaultLine,
             'arbeitsplatz_nr' => $this->lineWorkplaceMapper->workplaceNumberForLine($defaultLine),
             'order' => null,
+            'next_order' => null,
             'matching_uids' => [],
+            'next_matching_uids' => [],
             'meta' => [
                 'source_mode' => 'remote_api',
                 'loading' => true,

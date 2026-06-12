@@ -20,5 +20,26 @@ abstract class ProductionOrderRepository
      */
     abstract public function nextOpenOrderForWorkplace(int $workplaceNumber): ?array;
 
+    /**
+     * @return array<int, array{
+     *     va_id: int,
+     *     va_auftragsnr: string,
+     *     va_status: int,
+     *     matstamm_matnr: string,
+     *     matstamm_maktx: string,
+     *     matstamm_fuellartnr: string,
+     *     va_beginn_soll: string,
+     *     va_beginn_ist: ?string,
+     *     va_ende_soll: ?string,
+     *     va_ende_ist: ?string
+     * }>
+     */
+    public function openOrdersForWorkplace(int $workplaceNumber, int $limit = 2): array
+    {
+        $order = $this->nextOpenOrderForWorkplace($workplaceNumber);
+
+        return $order === null ? [] : [$order];
+    }
+
     abstract public function sourceMode(): string;
 }
