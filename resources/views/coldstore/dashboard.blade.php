@@ -105,6 +105,19 @@
                     @php($initialNextOrder = $initialJobs['next_order'] ?? null)
                     @php($initialNextMatchingUids = $initialJobs['next_matching_uids'] ?? [])
                     @php($isJobsRemoteApiLoading = (bool) data_get($initialJobs, 'meta.loading', false))
+                    @php($formatRequiredPeText1 = function (?string $value): string {
+                        $normalizedValue = trim((string) $value);
+
+                        if ($normalizedValue === '') {
+                            return '<span class="required-pe-text1 required-pe-text1--empty">&mdash;</span>';
+                        }
+
+                        if (strlen($normalizedValue) <= 3) {
+                            return '<span class="required-pe-text1">'.e($normalizedValue).'</span>';
+                        }
+
+                        return '<span class="required-pe-text1">'.e(substr($normalizedValue, 0, -3)).'<strong>'.e(substr($normalizedValue, -3)).'</strong></span>';
+                    })
                     <div class="panel-card__header">
                         <div>
                             <p class="panel-card__eyebrow">Jobs</p>
@@ -163,12 +176,8 @@
                                 <dl class="detail-grid detail-grid--compact">
                                     <dt>Produktname</dt>
                                     <dd>{{ $initialOrder['required_product_name'] ?? $initialOrder['matstamm_maktx'] }}</dd>
-                                    <dt>MatStamm MatNr</dt>
-                                    <dd>{{ $initialOrder['matstamm_matnr'] }}</dd>
-                                    <dt>MatStamm_FuellArtNr</dt>
-                                    <dd>{{ $initialOrder['matstamm_fuellartnr'] }}</dd>
                                     <dt>Required_PEText1</dt>
-                                    <dd>{{ $initialOrder['required_pe_text1'] }}</dd>
+                                    <dd>{!! $formatRequiredPeText1($initialOrder['required_pe_text1'] ?? null) !!}</dd>
                                     <dt>Menge</dt>
                                     <dd>{{ $initialOrder['va_menge_kg'] !== null ? number_format((float) $initialOrder['va_menge_kg'], 2, ',', '.').' kg' : 'unbekannt' }}</dd>
                                     <dt>Beginn Soll</dt>
@@ -188,12 +197,8 @@
                                     <dl class="detail-grid detail-grid--compact">
                                         <dt>Produktname</dt>
                                         <dd>{{ $initialNextOrder['required_product_name'] ?? $initialNextOrder['matstamm_maktx'] }}</dd>
-                                        <dt>MatStamm MatNr</dt>
-                                        <dd>{{ $initialNextOrder['matstamm_matnr'] }}</dd>
-                                        <dt>MatStamm_FuellArtNr</dt>
-                                        <dd>{{ $initialNextOrder['matstamm_fuellartnr'] }}</dd>
                                         <dt>Required_PEText1</dt>
-                                        <dd>{{ $initialNextOrder['required_pe_text1'] }}</dd>
+                                        <dd>{!! $formatRequiredPeText1($initialNextOrder['required_pe_text1'] ?? null) !!}</dd>
                                         <dt>Menge</dt>
                                         <dd>{{ $initialNextOrder['va_menge_kg'] !== null ? number_format((float) $initialNextOrder['va_menge_kg'], 2, ',', '.').' kg' : 'unbekannt' }}</dd>
                                         <dt>Beginn Soll</dt>

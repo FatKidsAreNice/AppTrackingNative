@@ -516,12 +516,8 @@ function bootDashboard() {
                 <dl class="detail-grid detail-grid--compact">
                     <dt>Produktname</dt>
                     <dd>${order.required_product_name ?? order.matstamm_maktx}</dd>
-                    <dt>MatStamm MatNr</dt>
-                    <dd>${order.matstamm_matnr}</dd>
-                    <dt>MatStamm_FuellArtNr</dt>
-                    <dd>${order.matstamm_fuellartnr}</dd>
                     <dt>Required_PEText1</dt>
-                    <dd>${order.required_pe_text1}</dd>
+                    <dd>${formatRequiredPeText1(order.required_pe_text1)}</dd>
                     <dt>Menge</dt>
                     <dd>${formatOrderQuantity(order.va_menge_kg)}</dd>
                     <dt>Beginn Soll</dt>
@@ -530,6 +526,29 @@ function bootDashboard() {
                 ${matchingUids === null ? '' : renderNextMatchingUids(matchingUids)}
             </section>
         `;
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+    function formatRequiredPeText1(value) {
+        const normalizedValue = String(value ?? '').trim();
+
+        if (normalizedValue === '') {
+            return '<span class="required-pe-text1 required-pe-text1--empty">&mdash;</span>';
+        }
+
+        if (normalizedValue.length <= 3) {
+            return `<span class="required-pe-text1">${escapeHtml(normalizedValue)}</span>`;
+        }
+
+        return `<span class="required-pe-text1">${escapeHtml(normalizedValue.slice(0, -3))}<strong>${escapeHtml(normalizedValue.slice(-3))}</strong></span>`;
     }
 
     function formatOrderQuantity(quantity) {

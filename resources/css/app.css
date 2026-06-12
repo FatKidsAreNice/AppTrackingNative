@@ -402,6 +402,23 @@ body.coldstore-body {
     margin-top: 0.85rem;
 }
 
+.required-pe-text1 {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+}
+
+.required-pe-text1 strong {
+    font-weight: 800;
+    color: #0f3a63;
+}
+
+.required-pe-text1--empty {
+    color: #5b6877;
+}
+
 .line-picker {
     position: relative;
     width: min(15rem, 100%);
