@@ -30,9 +30,13 @@ it('renders the compact jobs overview for the mobile workflow', function () {
     Config::set('coldstore.jobs.data_source', 'local');
     Config::set('coldstore.jobs.production_orders.source', 'mock');
 
-    $response = $this->get(route('coldstore.dashboard'));
+    $response = $this->get(route('coldstore.dashboard', ['surface' => 'mobile']));
 
     $response->assertSuccessful()
+        ->assertSee('coldstore-surface-mobile', false)
+        ->assertSee('class="coldstore-shell "', false)
+        ->assertDontSee('class="coldstore-shell nativephp-safe-area"', false)
+        ->assertSee('panel-card panel-card--jobs', false)
         ->assertSee('Overview')
         ->assertSee('Aufträge')
         ->assertSee('Jobs')
@@ -54,6 +58,7 @@ it('renders the compact jobs overview for the mobile workflow', function () {
         ->assertSee('data-open-job-detail="next"', false)
         ->assertSee('data-job-detail-panel hidden', false)
         ->assertSee('data-close-job-detail', false)
+        ->assertSee('← Zurück zu Aufträgen', false)
         ->assertSee('"matching_uids":[{"uid":"UID-L6-A"', false)
         ->assertSee('"next_matching_uids":[{"uid":"UID-L1-A"', false)
         ->assertSee('"dataSource":"local"', false)
@@ -64,6 +69,38 @@ it('renders the compact jobs overview for the mobile workflow', function () {
         ->assertDontSee('track-map--rotated', false)
         ->assertSee('Kühlhaus')
         ->assertSee('BEV-Quelle');
+});
+
+it('automatically uses the mobile surface for nativephp requests', function () {
+    Config::set('coldstore.remote.base_url', null);
+    Config::set('coldstore.jobs.data_source', 'local');
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
+
+    $response = $this
+        ->withHeader('User-Agent', 'NativePHP/1.0')
+        ->get(route('coldstore.dashboard'));
+
+    $response->assertSuccessful()
+        ->assertSee('coldstore-surface-mobile', false)
+        ->assertDontSee('class="coldstore-shell nativephp-safe-area"', false);
+});
+
+it('uses the emphasized required pe text suffix formatting across the jobs ui renderers', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+    $js = file_get_contents(resource_path('js/coldstore-app.js'));
+    $blade = file_get_contents(resource_path('views/coldstore/dashboard.blade.php'));
+
+    expect($css)
+        ->toContain('.required-pe-text1__suffix')
+        ->toContain('font-size: 1.2em;')
+        ->toContain('font-weight: 800;')
+        ->and($js)
+        ->toContain('<dt>Material</dt>')
+        ->toContain('<strong class="required-pe-text1__suffix">')
+        ->toContain('<dd>${formatRequiredPeText1(order.required_pe_text1)}</dd>')
+        ->toContain('<dd data-job-detail-required-pe>${formatRequiredPeText1(order?.required_pe_text1)}</dd>')
+        ->and($blade)
+        ->toContain('<strong class="required-pe-text1__suffix">');
 });
 
 it('renders a neutral loading jobs state for remote api mode', function () {

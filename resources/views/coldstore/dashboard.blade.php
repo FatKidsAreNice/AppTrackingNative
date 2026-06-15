@@ -83,7 +83,7 @@
 
         <section class="dashboard-screen" data-dashboard-screen="jobs" hidden>
             <section class="jobs-panel">
-                <article class="panel-card">
+                <article class="panel-card panel-card--jobs">
                     @php($initialOrder = $initialJobs['order'])
                     @php($initialNextOrder = $initialJobs['next_order'] ?? null)
                     @php($isJobsRemoteApiLoading = (bool) data_get($initialJobs, 'meta.loading', false))
@@ -100,7 +100,7 @@
                             return '<span class="required-pe-text1">'.e($normalizedValue).'</span>';
                         }
 
-                        return '<span class="required-pe-text1">'.e(substr($normalizedValue, 0, -3)).'<strong>'.e(substr($normalizedValue, -3)).'</strong></span>';
+                        return '<span class="required-pe-text1">'.e(substr($normalizedValue, 0, -3)).'<strong class="required-pe-text1__suffix">'.e(substr($normalizedValue, -3)).'</strong></span>';
                     })
                     <div class="panel-card__header">
                         <div>
@@ -158,7 +158,7 @@
 
                             <section class="job-order-card__detail" data-job-detail-panel hidden>
                                 <button class="job-order-card__back" type="button" data-close-job-detail>
-                                    Zurück zu Aufträgen
+                                    ← Zurück zu Aufträgen
                                 </button>
                                 <div class="job-order-card__section" data-job-detail-content></div>
                             </section>

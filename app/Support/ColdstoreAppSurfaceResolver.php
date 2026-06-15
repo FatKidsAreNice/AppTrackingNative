@@ -22,7 +22,18 @@ class ColdstoreAppSurfaceResolver
             return $sessionSurface;
         }
 
+        if ($this->isNativePhpRequest($request)) {
+            return 'mobile';
+        }
+
         return $this->normalizeSurface(config('coldstore.app_surface', 'desktop')) ?? 'desktop';
+    }
+
+    private function isNativePhpRequest(Request $request): bool
+    {
+        $userAgent = strtolower((string) $request->userAgent());
+
+        return str_contains($userAgent, 'nativephp');
     }
 
     private function normalizeSurface(mixed $surface): ?string

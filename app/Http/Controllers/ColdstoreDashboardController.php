@@ -86,9 +86,10 @@ class ColdstoreDashboardController extends Controller
         return rtrim($baseUrl, '/');
     }
 
-    public function scanner(): View
+    public function scanner(Request $request): View
     {
         return view('coldstore.scanner', [
+            'appSurface' => $this->coldstoreAppSurfaceResolver->resolve($request),
             'barcodeEndpoint' => route('api.coldstore.barcodes.store', absolute: false),
             'cameraPluginInstalled' => InstalledVersions::isInstalled('nativephp/mobile-camera'),
             'remoteConfigured' => filled(config('coldstore.remote.base_url')),
@@ -97,9 +98,10 @@ class ColdstoreDashboardController extends Controller
         ]);
     }
 
-    public function settings(): View
+    public function settings(Request $request): View
     {
         return view('coldstore.settings', [
+            'appSurface' => $this->coldstoreAppSurfaceResolver->resolve($request),
             'overviewEndpoint' => route('api.coldstore.overview', absolute: false),
             'barcodeEndpoint' => route('api.coldstore.barcodes.store', absolute: false),
             'remoteBaseUrl' => config('coldstore.remote.base_url'),

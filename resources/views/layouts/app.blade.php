@@ -9,8 +9,9 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="coldstore-body">
-        <main class="nativephp-safe-area coldstore-shell">
+    @php($surface = $appSurface ?? 'desktop')
+    <body class="coldstore-body coldstore-surface-{{ $surface }}">
+        <main class="coldstore-shell {{ $surface === 'mobile' ? '' : 'nativephp-safe-area' }}">
             @yield('content')
         </main>
 

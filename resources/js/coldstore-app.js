@@ -498,7 +498,7 @@ function bootDashboard() {
                 <dl class="detail-grid detail-grid--compact">
                     <dt>Produktname</dt>
                     <dd>${order.required_product_name ?? order.matstamm_maktx}</dd>
-                    <dt>Required_PEText1</dt>
+                    <dt>Material</dt>
                     <dd>${formatRequiredPeText1(order.required_pe_text1)}</dd>
                     <dt>Menge</dt>
                     <dd>${formatOrderQuantity(order.va_menge_kg)}</dd>
@@ -530,7 +530,7 @@ function bootDashboard() {
             return `<span class="required-pe-text1">${escapeHtml(normalizedValue)}</span>`;
         }
 
-        return `<span class="required-pe-text1">${escapeHtml(normalizedValue.slice(0, -3))}<strong>${escapeHtml(normalizedValue.slice(-3))}</strong></span>`;
+        return `<span class="required-pe-text1">${escapeHtml(normalizedValue.slice(0, -3))}<strong class="required-pe-text1__suffix">${escapeHtml(normalizedValue.slice(-3))}</strong></span>`;
     }
 
     function formatOrderQuantity(quantity) {
@@ -758,7 +758,7 @@ function bootDashboard() {
         return `
             <section class="job-order-card__detail" data-job-detail-panel ${state.activeJobDetail ? '' : 'hidden'}>
                 <button class="job-order-card__back" type="button" data-close-job-detail>
-                    Zurück zu Aufträgen
+                    ← Zurück zu Aufträgen
                 </button>
                 <div class="job-order-card__section">
                     <div class="job-order-card__header">
@@ -770,7 +770,7 @@ function bootDashboard() {
                     <dl class="detail-grid detail-grid--compact">
                         <dt>Produktname</dt>
                         <dd data-job-detail-product>${escapeHtml(jobProductName(order))}</dd>
-                        <dt>Required_PEText1</dt>
+                        <dt>Material</dt>
                         <dd data-job-detail-required-pe>${formatRequiredPeText1(order?.required_pe_text1)}</dd>
                         <dt>Menge</dt>
                         <dd data-job-detail-quantity>${formatOrderQuantity(order?.va_menge_kg)}</dd>

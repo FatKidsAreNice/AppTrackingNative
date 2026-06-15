@@ -28,8 +28,20 @@
     --coldstore-line: #d5dee8;
 }
 
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 html,
+body,
 body.coldstore-body {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
     touch-action: manipulation;
     overscroll-behavior: none;
 }
@@ -58,6 +70,9 @@ body.coldstore-body textarea {
 }
 
 .coldstore-shell {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
     padding-bottom: 11rem;
 }
 
@@ -95,13 +110,14 @@ body.coldstore-body textarea {
 }
 
 .coldstore-page {
-    width: min(1180px, calc(100vw - 1.5rem));
+    width: min(1180px, calc(100% - 1.5rem));
+    max-width: 100%;
     margin: 0 auto;
     padding: 1rem 0 2rem;
 }
 
 .coldstore-page--narrow {
-    width: min(840px, calc(100vw - 1.5rem));
+    width: min(840px, calc(100% - 1.5rem));
 }
 
 .hero-banner {
@@ -223,6 +239,8 @@ body.coldstore-body textarea {
 .section-grid,
 .jobs-panel {
     display: grid;
+    max-width: 100%;
+    overflow-x: hidden;
     gap: 1rem;
     margin-top: 1rem;
 }
@@ -270,6 +288,8 @@ body.coldstore-body textarea {
 }
 
 .panel-card {
+    min-width: 0;
+    max-width: 100%;
     padding: 1rem;
 }
 
@@ -317,7 +337,8 @@ body.coldstore-body textarea {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
-    width: min(32rem, calc(100vw - 1.5rem));
+    width: min(32rem, calc(100% - 1.5rem));
+    max-width: calc(100% - 1.5rem);
     padding: 0.55rem;
     border: 1px solid rgb(255 255 255 / 0.75);
     border-radius: 1.25rem;
@@ -377,6 +398,8 @@ body.coldstore-body textarea {
 
 .job-order-card {
     margin-top: 1rem;
+    min-width: 0;
+    max-width: 100%;
     padding: 1rem;
 }
 
@@ -494,6 +517,11 @@ body.coldstore-body textarea {
     color: #0f3a63;
 }
 
+.required-pe-text1__suffix {
+    font-size: 1.2em;
+    line-height: 1;
+}
+
 .required-pe-text1--empty {
     color: #5b6877;
 }
@@ -576,6 +604,8 @@ body.coldstore-body textarea {
 .map-frame {
     position: relative;
     margin-top: 1rem;
+    min-width: 0;
+    max-width: 100%;
     border-radius: 1.25rem;
     overflow: hidden;
     border: 1px solid #d2dde6;
@@ -661,6 +691,7 @@ body.coldstore-body textarea {
 .track-map {
     display: block;
     width: 100%;
+    max-width: 100%;
     min-height: 20rem;
 }
 
@@ -690,6 +721,8 @@ body.coldstore-body textarea {
 .track-list,
 .jobs-list {
     display: grid;
+    min-width: 0;
+    max-width: 100%;
     gap: 0.75rem;
 }
 
@@ -713,6 +746,8 @@ body.coldstore-body textarea {
 .job-row,
 .stack-item {
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
     padding: 0.85rem 0.95rem;
     border: 1px solid #dde5ec;
     border-radius: 1rem;
@@ -836,6 +871,30 @@ body.coldstore-body textarea {
     color: #92400e;
 }
 
+.coldstore-surface-mobile {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+.coldstore-surface-mobile .coldstore-shell,
+.coldstore-surface-mobile .coldstore-page,
+.coldstore-surface-mobile main {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.coldstore-surface-mobile .coldstore-page {
+    width: calc(100% - 1rem);
+}
+
+.coldstore-surface-mobile .dashboard-screen,
+.coldstore-surface-mobile .jobs-panel,
+.coldstore-surface-mobile .panel-card--jobs {
+    margin-top: 0;
+    padding-top: 0;
+}
+
 @media (max-width: 900px) {
     :root {
         --bev-location-label-offset-x: 5%;
@@ -902,5 +961,11 @@ body.coldstore-body textarea {
 
     .detail-grid {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .coldstore-surface-mobile .coldstore-page {
+        width: calc(100% - 1rem);
+        padding-inline: 0;
+        padding-top: 0;
     }
 }
