@@ -64,6 +64,9 @@ function bootDashboard() {
         activeDashboardScreen: 'overview',
         filter: '',
         selectedTrackId: initialOverview.overview?.selected_track_id ?? null,
+        highlightedTrackId: null,
+        highlightedTrackUid: null,
+        overviewHighlightMessage: null,
         trackSessionSeenAt: {},
         mapBackgroundCache: {
             [initialFrameId]: {
@@ -290,6 +293,16 @@ function bootDashboard() {
                 state.selectedTrackId = state.overview.overview?.selected_track_id ?? state.overview.tracks?.[0]?.track_id ?? null;
             }
 
+            if (state.highlightedTrackUid) {
+                const highlightedTrack = findTrackByUid(state.highlightedTrackUid);
+
+                state.highlightedTrackId = highlightedTrack?.track_id ?? null;
+
+                if (!highlightedTrack && state.overviewHighlightMessage === null) {
+                    state.overviewHighlightMessage = `Schrank fuer UID ${state.highlightedTrackUid} in der Overview nicht gefunden.`;
+                }
+            }
+
             render();
         } catch (error) {
             if (subtitle) {
@@ -357,6 +370,57 @@ function bootDashboard() {
 
     function findSelectedTrack() {
         return (state.overview.tracks ?? []).find((track) => track.track_id === Number(state.selectedTrackId)) ?? null;
+    }
+
+    function findTrackByUid(uid) {
+        const normalizedUid = String(uid ?? '').trim();
+
+        if (normalizedUid === '') {
+            return null;
+        }
+
+        return (state.overview.tracks ?? []).find((track) => String(track.barcode_id ?? '').trim() === normalizedUid) ?? null;
+    }
+
+    function selectTrack(trackId, highlightedUid = null) {
+        state.selectedTrackId = Number(trackId);
+        state.highlightedTrackId = Number(trackId);
+        state.highlightedTrackUid = highlightedUid ? String(highlightedUid) : null;
+        state.overviewHighlightMessage = null;
+    }
+
+    function openOverviewForUid(uid) {
+        const normalizedUid = String(uid ?? '').trim();
+
+        if (normalizedUid === '') {
+            return;
+        }
+
+        const matchingTrack = findTrackByUid(normalizedUid);
+
+        state.activeDashboardScreen = 'overview';
+        state.highlightedTrackUid = normalizedUid;
+
+        if (matchingTrack) {
+            selectTrack(matchingTrack.track_id, normalizedUid);
+        } else {
+            state.highlightedTrackId = null;
+            state.overviewHighlightMessage = `Schrank fuer UID ${normalizedUid} in der Overview nicht gefunden.`;
+        }
+
+        render();
+
+        requestAnimationFrame(() => {
+            const highlightedElement = matchingTrack
+                ? root.querySelector(`[data-select-track="${matchingTrack.track_id}"]`)
+                : null;
+
+            highlightedElement?.scrollIntoView({
+                block: 'center',
+                inline: 'nearest',
+                behavior: 'smooth',
+            });
+        });
     }
 
     function mapPoint(x, y) {
@@ -825,6 +889,12 @@ function bootDashboard() {
             resetJobOrderView();
             renderJobOrder();
         });
+
+        jobOrder.querySelectorAll('[data-open-overview-uid]').forEach((button) => {
+            button.addEventListener('click', () => {
+                openOverviewForUid(button.dataset.openOverviewUid);
+            });
+        });
     }
 
     function resetJobOrderView() {
@@ -887,14 +957,11 @@ function bootDashboard() {
             <div class="job-order-card__matches">
                 ${matchingUids
             .map((matchingUid) => `
-                        <span>
-                            <strong>${escapeHtml(matchingUid.uid)}</strong>
-                            <small>Material: ${escapeHtml(matchingUid.cabinet_content?.material_pe_text1 ?? matchingUid.etikinterface_pe_text1 ?? '—')}</small>
+                        <button class="job-order-card__match-button" type="button" data-open-overview-uid="${escapeHtml(matchingUid.uid)}">
+                            <strong>UID: ${escapeHtml(matchingUid.uid)}</strong>
                             <small>Gewicht: ${escapeHtml(formatCabinetWeight(matchingUid.cabinet_content?.net_weight_kg ?? null))}</small>
-                            <small>Von: ${escapeHtml(matchingUid.cabinet_content?.lager_von_name ?? 'unbekannt')}</small>
                             <small>Nach: ${escapeHtml(matchingUid.cabinet_content?.lager_nach_name ?? 'unbekannt')}</small>
-                            <small>Status: ${escapeHtml(matchingUid.matches_required_material ? 'passt zum Auftrag' : 'passt nicht zum Auftrag')}</small>
-                        </span>
+                        </button>
                     `)
             .join('')}
             </div>
@@ -915,7 +982,9 @@ function bootDashboard() {
         const trackMarkup = tracks
             .map((track) => {
                 const point = mapPoint(track.x, track.y);
-                const radius = track.track_id === Number(state.selectedTrackId) ? 2.4 : 1.7;
+                const isSelected = track.track_id === Number(state.selectedTrackId);
+                const isHighlighted = track.track_id === Number(state.highlightedTrackId);
+                const radius = isSelected ? 2.4 : (isHighlighted ? 2.15 : 1.7);
 
                 return `
                     <circle
@@ -923,8 +992,8 @@ function bootDashboard() {
                         cy="${point.y}"
                         r="${radius}"
                         fill="${trackColor()}"
-                        stroke="${track.track_id === Number(state.selectedTrackId) ? '#111827' : 'none'}"
-                        stroke-width="${track.track_id === Number(state.selectedTrackId) ? '0.45' : '0'}"
+                        stroke="${isSelected ? '#111827' : (isHighlighted ? '#0f3a63' : 'none')}"
+                        stroke-width="${isSelected ? '0.45' : (isHighlighted ? '0.65' : '0')}"
                         data-track-node="${track.track_id}"
                     ></circle>
                 `;
@@ -948,7 +1017,7 @@ function bootDashboard() {
 
         map.querySelectorAll('[data-track-node]').forEach((node) => {
             node.addEventListener('click', () => {
-                state.selectedTrackId = Number(node.dataset.trackNode);
+                selectTrack(node.dataset.trackNode);
                 render();
             });
         });
@@ -960,15 +1029,21 @@ function bootDashboard() {
         trackList.innerHTML = filteredTracks
             .map((track) => {
                 const selected = track.track_id === Number(state.selectedTrackId);
+                const highlighted = track.track_id === Number(state.highlightedTrackId);
 
                 return `
-                    <button class="track-row ${selected ? 'track-row--active' : ''}" type="button" data-select-track="${track.track_id}">
+                    <button
+                        class="track-row ${selected ? 'track-row--active' : ''} ${highlighted ? 'track-row--highlighted' : ''}"
+                        type="button"
+                        data-select-track="${track.track_id}"
+                        data-track-uid="${escapeHtml(track.barcode_id || '')}"
+                    >
                         <span>
                             <strong>${track.display_id}</strong>
                             <small>Position x=${track.x.toFixed(2)}, y=${track.y.toFixed(2)}</small>
                         </span>
                         <span>
-                            <strong>${selected ? 'Ausgewählt' : 'Track'}</strong>
+                            <strong>${selected ? 'Ausgewählt' : (highlighted ? 'Markiert' : 'Track')}</strong>
                             <small>${track.barcode_id || 'Kein Barcode'}</small>
                         </span>
                     </button>
@@ -978,7 +1053,7 @@ function bootDashboard() {
 
         trackList.querySelectorAll('[data-select-track]').forEach((button) => {
             button.addEventListener('click', () => {
-                state.selectedTrackId = Number(button.dataset.selectTrack);
+                selectTrack(button.dataset.selectTrack);
                 render();
             });
         });
@@ -1035,7 +1110,7 @@ function bootDashboard() {
         }
 
         if (subtitle) {
-            subtitle.textContent = state.overview.overview?.subtitle ?? '';
+            subtitle.textContent = state.overviewHighlightMessage ?? state.overview.overview?.subtitle ?? '';
         }
 
         trackCount.textContent = state.overview.overview?.track_count ?? '0';
@@ -1280,3 +1355,7 @@ function bootScanner() {
     renderHistory();
     renderLastScan(state.history[0] ?? null);
 }
+
+
+
+

@@ -115,6 +115,9 @@ it('uses a jobs view state that replaces the overview with the selected detail v
     expect($js)
         ->toContain("jobsView: 'overview'")
         ->toContain('selectedOrderKind: null')
+        ->toContain('highlightedTrackId: null')
+        ->toContain('highlightedTrackUid: null')
+        ->toContain('overviewHighlightMessage: null')
         ->toContain('jobOrder.innerHTML = renderJobDetailPanel(detail);')
         ->toContain('jobOrder.innerHTML = renderJobOverview();')
         ->toContain("state.jobsView = 'detail';")
@@ -131,6 +134,19 @@ it('uses a jobs view state that replaces the overview with the selected detail v
         ->toContain('data-jobs-detail')
         ->toContain('← Zurück zu Aufträgen')
         ->toContain('${renderMatchingUids(detail.matchingUids)}')
+        ->toContain('function openOverviewForUid(uid)')
+        ->toContain("state.activeDashboardScreen = 'overview';")
+        ->toContain('findTrackByUid(normalizedUid)')
+        ->toContain('data-open-overview-uid')
+        ->toContain('job-order-card__match-button')
+        ->toContain('<strong>UID: ${escapeHtml(matchingUid.uid)}</strong>')
+        ->toContain('<small>Gewicht: ${escapeHtml(formatCabinetWeight(matchingUid.cabinet_content?.net_weight_kg ?? null))}</small>')
+        ->toContain('<small>Nach: ${escapeHtml(matchingUid.cabinet_content?.lager_nach_name ?? \'unbekannt\')}</small>')
+        ->toContain('data-track-uid="${escapeHtml(track.barcode_id || \'\')}"')
+        ->toContain('track-row--highlighted')
+        ->not->toContain('<small>Material: ${escapeHtml(matchingUid.cabinet_content?.material_pe_text1 ?? matchingUid.etikinterface_pe_text1 ?? \'—\')}</small>')
+        ->not->toContain('<small>Von: ${escapeHtml(matchingUid.cabinet_content?.lager_von_name ?? \'unbekannt\')}</small>')
+        ->not->toContain('<small>Status: ${escapeHtml(matchingUid.matches_required_material ? \'passt zum Auftrag\' : \'passt nicht zum Auftrag\')}</small>')
         ->and($css)
         ->toContain('.coldstore-surface-mobile .panel-card--jobs')
         ->toContain('align-self: stretch;')
@@ -140,12 +156,28 @@ it('uses a jobs view state that replaces the overview with the selected detail v
         ->toContain('overscroll-behavior: none;')
         ->toContain('.coldstore-surface-mobile [data-jobs-detail]')
         ->toContain('scroll-margin-top: 0.75rem;')
+        ->toContain('.job-order-card__match-button')
+        ->toContain('.track-row--highlighted')
         ->toContain('[data-jobs-line-selector][hidden]')
         ->toContain('display: none !important;')
         ->and($blade)
         ->toContain('data-jobs-panel')
         ->toContain('data-jobs-line-selector')
         ->not->toContain('data-job-detail-panel hidden');
+});
+
+it('renders demo overview tracks with stable uid to track assignments for overview highlighting', function () {
+    Config::set('coldstore.remote.base_url', null);
+    Config::set('coldstore.jobs.data_source', 'local');
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
+
+    $response = $this->get(route('coldstore.dashboard', ['surface' => 'mobile']));
+
+    $response->assertSuccessful()
+        ->assertSee('"track_id":101', false)
+        ->assertSee('"barcode_id":"32171700"', false)
+        ->assertSee('"track_id":204', false)
+        ->assertSee('"barcode_id":"32167948"', false);
 });
 
 it('renders a neutral loading jobs state for remote api mode', function () {

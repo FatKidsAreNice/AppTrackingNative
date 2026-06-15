@@ -503,6 +503,24 @@ body.coldstore-body textarea {
     display: block;
 }
 
+.job-order-card__match-button {
+    display: grid;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #dde5ec;
+    border-radius: 0.75rem;
+    background: #f8fafc;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.job-order-card__match-button strong,
+.job-order-card__match-button small {
+    display: block;
+}
+
 .detail-grid--compact {
     margin-top: 0.85rem;
 }
@@ -775,6 +793,11 @@ body.coldstore-body textarea {
 .track-row--active {
     border-color: rgb(215 25 32 / 0.5);
     background: rgb(215 25 32 / 0.06);
+}
+
+.track-row--highlighted {
+    border-color: rgb(15 58 99 / 0.45);
+    box-shadow: 0 0 0 3px rgb(15 58 99 / 0.14);
 }
 
 .job-row--active {
