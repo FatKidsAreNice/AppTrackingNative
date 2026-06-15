@@ -50,20 +50,42 @@ class JobMatchingService
      *         track_id: ?int,
      *         etikinterface_id: ?int,
      *         etikinterface_pe_text1: string,
+     *         cabinet_content: ?array{
+     *             uid: string,
+     *             material_pe_text1: string,
+     *             net_weight_kg: ?float,
+     *             lager_von_id: ?int,
+     *             lager_von_name: ?string,
+     *             lager_nach_id: ?int,
+     *             lager_nach_name: ?string,
+     *             last_booking: bool
+     *         },
      *         fuellartnr: ?string,
      *         position: array{x: float, y: float}|null,
      *         state: string,
-     *         has_track_assignment: bool
+     *         has_track_assignment: bool,
+     *         matches_required_material: bool
      *     }>,
      *     next_matching_uids: array<int, array{
      *         uid: string,
      *         track_id: ?int,
      *         etikinterface_id: ?int,
      *         etikinterface_pe_text1: string,
+     *         cabinet_content: ?array{
+     *             uid: string,
+     *             material_pe_text1: string,
+     *             net_weight_kg: ?float,
+     *             lager_von_id: ?int,
+     *             lager_von_name: ?string,
+     *             lager_nach_id: ?int,
+     *             lager_nach_name: ?string,
+     *             last_booking: bool
+     *         },
      *         fuellartnr: ?string,
      *         position: array{x: float, y: float}|null,
      *         state: string,
-     *         has_track_assignment: bool
+     *         has_track_assignment: bool,
+     *         matches_required_material: bool
      *     }>,
      *     meta: array{
      *         source_mode: string
@@ -186,10 +208,21 @@ class JobMatchingService
      *     track_id: ?int,
      *     etikinterface_id: ?int,
      *     etikinterface_pe_text1: string,
+     *     cabinet_content: ?array{
+     *         uid: string,
+     *         material_pe_text1: string,
+     *         net_weight_kg: ?float,
+     *         lager_von_id: ?int,
+     *         lager_von_name: ?string,
+     *         lager_nach_id: ?int,
+     *         lager_nach_name: ?string,
+     *         last_booking: bool
+     *     },
      *     fuellartnr: ?string,
      *     position: array{x: float, y: float}|null,
      *     state: string,
-     *     has_track_assignment: bool
+     *     has_track_assignment: bool,
+     *     matches_required_material: bool
      * }>
      */
     private function matchingInventory(string $requiredPeText1): array
@@ -197,15 +230,16 @@ class JobMatchingService
         $trimmedRequiredPeText1 = trim((string) $requiredPeText1);
 
         return collect($this->coldstoreInventoryRepository->allCurrent())
-            ->filter(function (array $inventoryItem) use ($trimmedRequiredPeText1): bool {
-                return trim((string) $inventoryItem['etikinterface_pe_text1']) === $trimmedRequiredPeText1;
-            })
-            ->map(function (array $inventoryItem): array {
+            ->map(function (array $inventoryItem) use ($trimmedRequiredPeText1): array {
+                $normalizedUid = trim((string) $inventoryItem['uid']);
+                $cabinetContent = $this->coldstoreInventoryRepository->findCurrentContentByUid($normalizedUid);
+
                 return [
-                    'uid' => trim((string) $inventoryItem['uid']),
+                    'uid' => $normalizedUid,
                     'track_id' => isset($inventoryItem['track_id']) ? (int) $inventoryItem['track_id'] : null,
                     'etikinterface_id' => isset($inventoryItem['etikinterface_id']) ? (int) $inventoryItem['etikinterface_id'] : null,
                     'etikinterface_pe_text1' => trim((string) $inventoryItem['etikinterface_pe_text1']),
+                    'cabinet_content' => $cabinetContent,
                     'fuellartnr' => filled($inventoryItem['fuellartnr'] ?? null) ? trim((string) $inventoryItem['fuellartnr']) : null,
                     'position' => is_array($inventoryItem['position'] ?? null)
                         ? [
@@ -215,10 +249,36 @@ class JobMatchingService
                         : null,
                     'state' => trim((string) $inventoryItem['state']),
                     'has_track_assignment' => isset($inventoryItem['track_id']) && $inventoryItem['track_id'] !== null,
+                    'matches_required_material' => $this->cabinetContentMatchesRequiredPeText1(
+                        $trimmedRequiredPeText1,
+                        $cabinetContent,
+                    ),
                 ];
             })
+            ->filter(fn (array $inventoryItem): bool => $inventoryItem['matches_required_material'])
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  array{
+     *     uid: string,
+     *     material_pe_text1: string,
+     *     net_weight_kg: ?float,
+     *     lager_von_id: ?int,
+     *     lager_von_name: ?string,
+     *     lager_nach_id: ?int,
+     *     lager_nach_name: ?string,
+     *     last_booking: bool
+     * }|null  $cabinetContent
+     */
+    public function cabinetContentMatchesRequiredPeText1(string $requiredPeText1, ?array $cabinetContent): bool
+    {
+        if ($cabinetContent === null) {
+            return false;
+        }
+
+        return trim((string) $cabinetContent['material_pe_text1']) === trim((string) $requiredPeText1);
     }
 
     private function sourceMode(): string

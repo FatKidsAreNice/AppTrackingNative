@@ -16,9 +16,13 @@ it('returns a matching job payload for a line with a track linked uid', function
         ->assertJsonPath('next_order.required_pe_text1', '91200')
         ->assertJsonPath('next_order.required_product_name', 'Rinderschinken fuer PEText1 91200')
         ->assertJsonPath('next_order.va_menge_kg', 98.7)
-        ->assertJsonPath('matching_uids.0.uid', 'UID-L6-A')
+        ->assertJsonPath('matching_uids.0.uid', '32171700')
+        ->assertJsonPath('matching_uids.0.cabinet_content.material_pe_text1', '95106')
+        ->assertJsonPath('matching_uids.0.cabinet_content.lager_nach_name', 'Kühlhaus')
+        ->assertJsonPath('matching_uids.0.matches_required_material', true)
         ->assertJsonPath('matching_uids.0.track_id', 101)
-        ->assertJsonPath('next_matching_uids.0.uid', 'UID-L1-A');
+        ->assertJsonPath('next_matching_uids.0.uid', '32167948')
+        ->assertJsonPath('next_matching_uids.0.cabinet_content.material_pe_text1', '91200');
 });
 
 it('accepts line as an alias for selected line in the jobs api', function () {
@@ -67,6 +71,8 @@ it('returns multiple matching uids for a line with several hits', function () {
     $response->assertSuccessful()
         ->assertJsonPath('selected_line', 4)
         ->assertJsonCount(2, 'matching_uids')
+        ->assertJsonPath('matching_uids.0.uid', 'UID-L4-A')
+        ->assertJsonPath('matching_uids.0.cabinet_content.material_pe_text1', '98888')
         ->assertJsonPath('matching_uids.1.has_track_assignment', false);
 });
 

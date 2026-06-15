@@ -559,6 +559,17 @@ function bootDashboard() {
         })} kg`;
     }
 
+    function formatCabinetWeight(weightKg) {
+        if (weightKg === null || weightKg === undefined || Number.isNaN(Number(weightKg))) {
+            return 'unbekannt';
+        }
+
+        return `${Number(weightKg).toLocaleString('de-DE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        })} kg`;
+    }
+
     function renderNextMatchingUids(matchingUids) {
         if (matchingUids.length === 0) {
             return '<p class="panel-card__muted job-order-card__note">Keine passende UID fuer den Folgeauftrag gefunden.</p>';
@@ -878,7 +889,11 @@ function bootDashboard() {
             .map((matchingUid) => `
                         <span>
                             <strong>${escapeHtml(matchingUid.uid)}</strong>
-                            <small>PEText1 ${escapeHtml(matchingUid.etikinterface_pe_text1)}</small>
+                            <small>Material: ${escapeHtml(matchingUid.cabinet_content?.material_pe_text1 ?? matchingUid.etikinterface_pe_text1 ?? '—')}</small>
+                            <small>Gewicht: ${escapeHtml(formatCabinetWeight(matchingUid.cabinet_content?.net_weight_kg ?? null))}</small>
+                            <small>Von: ${escapeHtml(matchingUid.cabinet_content?.lager_von_name ?? 'unbekannt')}</small>
+                            <small>Nach: ${escapeHtml(matchingUid.cabinet_content?.lager_nach_name ?? 'unbekannt')}</small>
+                            <small>Status: ${escapeHtml(matchingUid.matches_required_material ? 'passt zum Auftrag' : 'passt nicht zum Auftrag')}</small>
                         </span>
                     `)
             .join('')}

@@ -11,7 +11,11 @@ it('returns demo overview data when no remote url is configured', function () {
     $response->assertSuccessful()
         ->assertJsonPath('meta.source_mode', 'demo')
         ->assertJsonPath('overview.title', 'Coldstore Overview')
-        ->assertJsonCount(2, 'tracks');
+        ->assertJsonCount(2, 'tracks')
+        ->assertJsonPath('tracks.0.track_id', 101)
+        ->assertJsonPath('tracks.0.barcode_id', '32171700')
+        ->assertJsonPath('tracks.1.track_id', 204)
+        ->assertJsonPath('tracks.1.barcode_id', '32167948');
 });
 
 it('proxies overview data from the remote pc', function () {

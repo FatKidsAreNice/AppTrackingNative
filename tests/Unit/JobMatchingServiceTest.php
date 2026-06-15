@@ -6,7 +6,7 @@ use App\Services\ColdstoreJobs\JobMatchingService;
 use App\Services\ColdstoreJobs\LineWorkplaceMapper;
 use App\Services\ColdstoreJobs\ProductionOrderRepository;
 
-function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryOverride = null, ?array $lookupOverride = null): JobMatchingService
+function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryOverride = null, ?array $lookupOverride = null, ?array $cabinetContentOverride = null): JobMatchingService
 {
     return new JobMatchingService(
         new LineWorkplaceMapper,
@@ -95,9 +95,9 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
                 return 'test';
             }
         },
-        new class($inventoryOverride) extends ColdstoreInventoryRepository
+        new class($inventoryOverride, $cabinetContentOverride) extends ColdstoreInventoryRepository
         {
-            public function __construct(private ?array $inventoryOverride) {}
+            public function __construct(private ?array $inventoryOverride, private ?array $cabinetContentOverride) {}
 
             public function allCurrent(): array
             {
@@ -153,6 +153,86 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
                 ];
             }
 
+            public function findCurrentContentByUid(string $uid): ?array
+            {
+                if ($this->cabinetContentOverride !== null) {
+                    return $this->cabinetContentOverride[trim($uid)] ?? null;
+                }
+
+                return [
+                    'UID-L6-A' => [
+                        'uid' => 'UID-L6-A',
+                        'material_pe_text1' => '95106',
+                        'net_weight_kg' => 123.45,
+                        'lager_von_id' => 12,
+                        'lager_von_name' => 'Produktion',
+                        'lager_nach_id' => 34,
+                        'lager_nach_name' => 'Kühlhaus',
+                        'last_booking' => true,
+                    ],
+                    'UID-L4-A' => [
+                        'uid' => 'UID-L4-A',
+                        'material_pe_text1' => '98888',
+                        'net_weight_kg' => 96.25,
+                        'lager_von_id' => 21,
+                        'lager_von_name' => 'Reifung',
+                        'lager_nach_id' => 34,
+                        'lager_nach_name' => 'Kühlhaus',
+                        'last_booking' => true,
+                    ],
+                    'UID-L4-B' => [
+                        'uid' => 'UID-L4-B',
+                        'material_pe_text1' => '98888',
+                        'net_weight_kg' => 87.1,
+                        'lager_von_id' => 21,
+                        'lager_von_name' => 'Reifung',
+                        'lager_nach_id' => 34,
+                        'lager_nach_name' => 'Kühlhaus',
+                        'last_booking' => true,
+                    ],
+                    'UID-L5-A' => [
+                        'uid' => 'UID-L5-A',
+                        'material_pe_text1' => '91234',
+                        'net_weight_kg' => 82.0,
+                        'lager_von_id' => 12,
+                        'lager_von_name' => 'Produktion',
+                        'lager_nach_id' => 34,
+                        'lager_nach_name' => 'Kühlhaus',
+                        'last_booking' => true,
+                    ],
+                    'UID-CURRENT' => [
+                        'uid' => 'UID-CURRENT',
+                        'material_pe_text1' => '95106',
+                        'net_weight_kg' => 123.45,
+                        'lager_von_id' => 12,
+                        'lager_von_name' => 'Produktion',
+                        'lager_nach_id' => 34,
+                        'lager_nach_name' => 'Kühlhaus',
+                        'last_booking' => true,
+                    ],
+                    'UID-NEXT' => [
+                        'uid' => 'UID-NEXT',
+                        'material_pe_text1' => '91200',
+                        'net_weight_kg' => 98.7,
+                        'lager_von_id' => 12,
+                        'lager_von_name' => 'Produktion',
+                        'lager_nach_id' => 34,
+                        'lager_nach_name' => 'Kühlhaus',
+                        'last_booking' => true,
+                    ],
+                    'UID-TRIM' => [
+                        'uid' => 'UID-TRIM',
+                        'material_pe_text1' => '95106',
+                        'net_weight_kg' => 44.4,
+                        'lager_von_id' => 12,
+                        'lager_von_name' => 'Produktion',
+                        'lager_nach_id' => 34,
+                        'lager_nach_name' => 'Kühlhaus',
+                        'last_booking' => true,
+                    ],
+                ][trim($uid)] ?? null;
+            }
+
             public function sourceMode(): string
             {
                 return 'test';
@@ -193,6 +273,7 @@ it('returns a matching uid with track assignment for the default mock line', fun
             'track_id' => 101,
             'etikinterface_pe_text1' => '95106',
             'has_track_assignment' => true,
+            'matches_required_material' => true,
         ]);
 });
 
@@ -312,6 +393,57 @@ it('returns multiple matching uids when the coldstore inventory contains more th
     expect($payload['order']['required_pe_text1'])->toBe('98888')
         ->and($payload['matching_uids'])->toHaveCount(2)
         ->and(collect($payload['matching_uids'])->pluck('uid')->all())->toBe(['UID-L4-A', 'UID-L4-B']);
+});
+
+it('compares the required pe text1 against the cabinet content material exactly', function () {
+    $service = makeJobMatchingService();
+
+    expect($service->cabinetContentMatchesRequiredPeText1('95106', [
+        'uid' => '32171700',
+        'material_pe_text1' => '95106',
+        'net_weight_kg' => 123.45,
+        'lager_von_id' => 12,
+        'lager_von_name' => 'Produktion',
+        'lager_nach_id' => 34,
+        'lager_nach_name' => 'Kühlhaus',
+        'last_booking' => true,
+    ]))->toBeTrue();
+});
+
+it('does not match different cabinet content material values', function () {
+    $service = makeJobMatchingService();
+
+    expect($service->cabinetContentMatchesRequiredPeText1('95106', [
+        'uid' => '32171700',
+        'material_pe_text1' => '95101',
+        'net_weight_kg' => 123.45,
+        'lager_von_id' => 12,
+        'lager_von_name' => 'Produktion',
+        'lager_nach_id' => 34,
+        'lager_nach_name' => 'Kühlhaus',
+        'last_booking' => true,
+    ]))->toBeFalse();
+});
+
+it('returns no hit when the cabinet content cannot be loaded for an inventory uid', function () {
+    $payload = makeJobMatchingService(
+        null,
+        [[
+            'uid' => 'UID-MISSING',
+            'track_id' => 101,
+            'etikinterface_id' => 90006,
+            'etikinterface_pe_text1' => '95106',
+            'fuellartnr' => 'F5106',
+            'position' => ['x' => -9.2, 'y' => 2.4],
+            'state' => 'in_coldstore',
+            'scanned_at' => '2026-06-11T07:40:00',
+            'last_seen_at' => '2026-06-11T08:02:00',
+        ]],
+        null,
+        [],
+    )->payloadForLine(6);
+
+    expect($payload['matching_uids'])->toBe([]);
 });
 
 it('keeps matching uids without track assignments visible', function () {

@@ -326,6 +326,7 @@ class ColdstoreApiService
     {
         $trackStamp = now()->floatDiffInSeconds(now()->startOfDay()) + 1000;
         $bevStamp = $trackStamp - 0.18;
+        $demoTrackBarcodes = config('coldstore.demo_track_barcodes', []);
 
         return [
             'frame_id' => 'coldstore_bev',
@@ -340,7 +341,7 @@ class ColdstoreApiService
             'tracks' => [
                 [
                     'track_id' => 101,
-                    'barcode_id' => '',
+                    'barcode_id' => (string) ($demoTrackBarcodes[101] ?? ''),
                     'class_name' => 'rack_side',
                     'state' => 'confirmed',
                     'motion_state' => 'moving',
@@ -368,7 +369,7 @@ class ColdstoreApiService
                 ],
                 [
                     'track_id' => 204,
-                    'barcode_id' => '',
+                    'barcode_id' => (string) ($demoTrackBarcodes[204] ?? ''),
                     'class_name' => 'rack_side',
                     'state' => 'confirmed',
                     'motion_state' => 'static',

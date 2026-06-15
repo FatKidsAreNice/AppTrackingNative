@@ -4,6 +4,10 @@ return [
     'app_surface' => env('COLDSTORE_APP_SURFACE', 'desktop'),
     'poll_interval_seconds' => (int) env('COLDSTORE_POLL_INTERVAL_SECONDS', 5),
     'demo_fallback' => (bool) env('COLDSTORE_DEMO_FALLBACK', true),
+    'demo_track_barcodes' => [
+        101 => '32171700',
+        204 => '32167948',
+    ],
     'scanner' => [
         'id' => env('COLDSTORE_SCANNER_ID', 'coldstore-entry-01'),
         'direction' => env('COLDSTORE_SCAN_DIRECTION', 'entry'),
@@ -25,6 +29,7 @@ return [
         ],
         'inventory' => [
             'driver' => env('COLDSTORE_JOBS_INVENTORY_DRIVER', 'mock'),
+            'sqlsrv_connection' => env('COLDSTORE_JOBS_INVENTORY_SQLSRV_CONNECTION', 'coldstore_sqlsrv'),
         ],
     ],
 ];

@@ -61,8 +61,10 @@ it('renders the compact jobs overview for the mobile workflow', function () {
         ->assertDontSee('data-job-detail-panel', false)
         ->assertDontSee('data-close-job-detail', false)
         ->assertDontSee('← Zurück zu Aufträgen', false)
-        ->assertSee('"matching_uids":[{"uid":"UID-L6-A"', false)
-        ->assertSee('"next_matching_uids":[{"uid":"UID-L1-A"', false)
+        ->assertSee('"barcode_id":"32171700"', false)
+        ->assertSee('"barcode_id":"32167948"', false)
+        ->assertSee('"matching_uids":[{"uid":"32171700"', false)
+        ->assertSee('"next_matching_uids":[{"uid":"32167948"', false)
         ->assertSee('"dataSource":"local"', false)
         ->assertSee('"jobsPath":"\\/api\\/coldstore\\/jobs"', false)
         ->assertSee('data-select-dashboard-screen="overview"', false)
@@ -159,7 +161,7 @@ it('renders a neutral loading jobs state for remote api mode', function () {
         ->assertSee('"baseUrl":"http:\\/\\/10.10.123.66:8000"', false)
         ->assertSee('"jobsPath":"\\/api\\/coldstore\\/jobs"', false)
         ->assertSee('Jobs werden geladen ...')
-        ->assertDontSee('UID-L6-A')
+        ->assertDontSee('"matching_uids":[{"uid":"32171700"', false)
         ->assertDontSee('4711-06');
 });
 

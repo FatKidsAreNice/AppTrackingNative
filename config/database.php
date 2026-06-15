@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\SqlServerConnectionConfig;
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
@@ -121,11 +122,15 @@ return [
             'database' => env('COLDSTORE_SQLSERVER_DATABASE', 'TP0030TS1'),
             'username' => env('COLDSTORE_SQLSERVER_USERNAME', ''),
             'password' => env('COLDSTORE_SQLSERVER_PASSWORD', ''),
-            'charset' => 'utf8',
+            'charset' => SqlServerConnectionConfig::normalizeCharset(env('COLDSTORE_SQLSERVER_CHARSET', 'UTF-8')),
             'prefix' => '',
             'prefix_indexes' => true,
-            'encrypt' => filter_var(env('COLDSTORE_SQLSERVER_ENCRYPT', true), FILTER_VALIDATE_BOOL),
-            'trust_server_certificate' => filter_var(env('COLDSTORE_SQLSERVER_TRUST_SERVER_CERTIFICATE', true), FILTER_VALIDATE_BOOL),
+            'encrypt' => SqlServerConnectionConfig::normalizeEncryptOption(
+                env('COLDSTORE_SQLSERVER_ENCRYPT', 'yes'),
+            ),
+            'trust_server_certificate' => SqlServerConnectionConfig::normalizeEncryptOption(
+                env('COLDSTORE_SQLSERVER_TRUST_SERVER_CERTIFICATE', 'yes'),
+            ),
         ],
 
     ],
