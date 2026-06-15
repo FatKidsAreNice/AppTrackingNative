@@ -59,7 +59,8 @@ function bootDashboard() {
         jobLines: window.coldstoreDashboardJobLines ?? [],
         jobsError: null,
         jobsLoading: Boolean(initialJobs.meta?.loading),
-        activeJobDetail: null,
+        jobsView: 'overview',
+        selectedOrderKind: null,
         activeDashboardScreen: 'overview',
         filter: '',
         selectedTrackId: initialOverview.overview?.selected_track_id ?? null,
@@ -134,6 +135,20 @@ function bootDashboard() {
 
         if (linePickerMenu) {
             linePickerMenu.hidden = !isOpen;
+        }
+    }
+
+    function renderJobsLineSelector() {
+        if (!linePicker) {
+            return;
+        }
+
+        const shouldShowLineSelector = state.jobsView === 'overview';
+
+        linePicker.hidden = !shouldShowLineSelector;
+
+        if (!shouldShowLineSelector) {
+            setLinePickerOpen(false);
         }
     }
 
@@ -304,7 +319,7 @@ function bootDashboard() {
 
             state.jobsData = await response.json();
             state.jobsLoading = false;
-            state.activeJobDetail = null;
+            resetJobOrderView();
             setLinePickerOpen(false);
             render();
         } catch (error) {
@@ -699,7 +714,7 @@ function bootDashboard() {
         }
 
         if (!order) {
-            state.activeJobDetail = null;
+            resetJobOrderView();
             jobOrder.innerHTML = `
                 <div class="job-order-card__empty">
                     <p class="panel-card__eyebrow">Aktueller Auftrag</p>
@@ -710,13 +725,16 @@ function bootDashboard() {
             return;
         }
 
-        jobOrder.innerHTML = `
-            ${renderJobOverview()}
-            ${renderJobDetailPanel()}
-        `;
+        const detail = activeJobDetailPayload();
+
+        if (state.jobsView === 'detail' && detail) {
+            jobOrder.innerHTML = renderJobDetailPanel(detail);
+        } else {
+            resetJobOrderView();
+            jobOrder.innerHTML = renderJobOverview();
+        }
 
         bindJobOrderActions();
-        renderJobOrderState();
     }
 
     function renderJobOverview() {
@@ -724,7 +742,7 @@ function bootDashboard() {
         const nextOrder = state.jobsData.next_order;
 
         return `
-            <div class="job-order-card__overview" data-job-overview ${state.activeJobDetail ? 'hidden' : ''}>
+            <div class="job-order-card__overview" data-job-overview data-jobs-view="overview">
                 <button class="job-order-card__button" type="button" data-open-job-detail="current">
                     <span class="job-order-card__eyebrow">Aktueller Auftrag</span>
                     <strong class="job-order-card__number">${escapeHtml(order?.va_auftragsnr ?? '—')}</strong>
@@ -749,33 +767,29 @@ function bootDashboard() {
         `;
     }
 
-    function renderJobDetailPanel() {
-        const detail = activeJobDetailPayload();
-        const label = detail?.label ?? 'Aktueller Auftrag';
-        const order = detail?.order ?? state.jobsData.order;
-        const matchingUids = detail?.matchingUids ?? [];
+    function renderJobDetailPanel(detail) {
 
         return `
-            <section class="job-order-card__detail" data-job-detail-panel ${state.activeJobDetail ? '' : 'hidden'}>
+            <section class="job-order-card__detail" data-job-detail-panel data-jobs-detail data-jobs-view="detail">
                 <button class="job-order-card__back" type="button" data-close-job-detail>
                     ← Zurück zu Aufträgen
                 </button>
                 <div class="job-order-card__section">
                     <div class="job-order-card__header">
                         <div>
-                            <p class="panel-card__eyebrow" data-job-detail-label>${label}</p>
-                            <h3 class="panel-card__title" data-job-detail-number>${escapeHtml(order?.va_auftragsnr ?? '—')}</h3>
+                            <p class="panel-card__eyebrow">${detail.label}</p>
+                            <h3 class="panel-card__title">${escapeHtml(detail.order?.va_auftragsnr ?? '—')}</h3>
                         </div>
                     </div>
                     <dl class="detail-grid detail-grid--compact">
                         <dt>Produktname</dt>
-                        <dd data-job-detail-product>${escapeHtml(jobProductName(order))}</dd>
+                        <dd>${escapeHtml(jobProductName(detail.order))}</dd>
                         <dt>Material</dt>
-                        <dd data-job-detail-required-pe>${formatRequiredPeText1(order?.required_pe_text1)}</dd>
+                        <dd>${formatRequiredPeText1(detail.order?.required_pe_text1)}</dd>
                         <dt>Menge</dt>
-                        <dd data-job-detail-quantity>${formatOrderQuantity(order?.va_menge_kg)}</dd>
+                        <dd>${formatOrderQuantity(detail.order?.va_menge_kg)}</dd>
                         <dt>Passende UIDs</dt>
-                        <dd data-job-detail-matches>${renderMatchingUids(matchingUids)}</dd>
+                        <dd>${renderMatchingUids(detail.matchingUids)}</dd>
                     </dl>
                 </div>
             </section>
@@ -789,44 +803,48 @@ function bootDashboard() {
             }
 
             button.addEventListener('click', () => {
-                state.activeJobDetail = button.dataset.openJobDetail;
-                renderJobOrderState();
+                state.jobsView = 'detail';
+                state.selectedOrderKind = button.dataset.openJobDetail ?? null;
+                renderJobOrder();
+                scrollJobsDetailIntoView();
             });
         });
 
         jobOrder.querySelector('[data-close-job-detail]')?.addEventListener('click', () => {
-            state.activeJobDetail = null;
-            renderJobOrderState();
+            resetJobOrderView();
+            renderJobOrder();
         });
     }
 
-    function renderJobOrderState() {
-        const overview = jobOrder.querySelector('[data-job-overview]');
-        const detailPanel = jobOrder.querySelector('[data-job-detail-panel]');
+    function resetJobOrderView() {
+        state.jobsView = 'overview';
+        state.selectedOrderKind = null;
+    }
 
-        if (!overview || !detailPanel) {
+    function scrollJobsDetailIntoView() {
+        if (!document.body?.classList.contains('coldstore-surface-mobile')) {
             return;
         }
 
-        const detail = activeJobDetailPayload();
+        const detail = root.querySelector('[data-jobs-detail]');
+        const panel = root.querySelector('[data-jobs-panel]');
+        const target = detail ?? panel;
 
-        overview.hidden = Boolean(detail);
-        detailPanel.hidden = !detail;
-
-        if (!detail) {
+        if (!target) {
             return;
         }
 
-        jobOrder.querySelector('[data-job-detail-label]').textContent = detail.label;
-        jobOrder.querySelector('[data-job-detail-number]').textContent = detail.order?.va_auftragsnr ?? '—';
-        jobOrder.querySelector('[data-job-detail-product]').textContent = jobProductName(detail.order);
-        jobOrder.querySelector('[data-job-detail-required-pe]').innerHTML = formatRequiredPeText1(detail.order?.required_pe_text1);
-        jobOrder.querySelector('[data-job-detail-quantity]').textContent = formatOrderQuantity(detail.order?.va_menge_kg);
-        jobOrder.querySelector('[data-job-detail-matches]').innerHTML = renderMatchingUids(detail.matchingUids);
+        requestAnimationFrame(() => {
+            target.scrollIntoView({
+                block: 'start',
+                inline: 'nearest',
+                behavior: 'auto',
+            });
+        });
     }
 
     function activeJobDetailPayload() {
-        if (state.activeJobDetail === 'next' && state.jobsData.next_order) {
+        if (state.selectedOrderKind === 'next' && state.jobsData.next_order) {
             return {
                 label: 'Folgeauftrag',
                 order: state.jobsData.next_order,
@@ -834,7 +852,7 @@ function bootDashboard() {
             };
         }
 
-        if (state.activeJobDetail === 'current' && state.jobsData.order) {
+        if (state.selectedOrderKind === 'current' && state.jobsData.order) {
             return {
                 label: 'Aktueller Auftrag',
                 order: state.jobsData.order,
@@ -1021,6 +1039,7 @@ function bootDashboard() {
     function render() {
         renderMeta();
         renderDashboardScreens();
+        renderJobsLineSelector();
         renderLinePicker();
         renderJobOrder();
         renderJobs();

@@ -82,7 +82,7 @@
         </section>
 
         <section class="dashboard-screen" data-dashboard-screen="jobs" hidden>
-            <section class="jobs-panel">
+            <section class="jobs-panel" data-jobs-panel>
                 <article class="panel-card panel-card--jobs">
                     @php($initialOrder = $initialJobs['order'])
                     @php($initialNextOrder = $initialJobs['next_order'] ?? null)
@@ -107,7 +107,7 @@
                             <p class="panel-card__eyebrow">Jobs</p>
                             <h2 class="panel-card__title">Aufträge</h2>
                         </div>
-                        <div class="line-picker" data-line-picker>
+                        <div class="line-picker" data-line-picker data-jobs-line-selector>
                             <button class="line-picker__toggle" type="button" data-toggle-line-picker aria-expanded="false">
                                 <span class="line-picker__label">Linie</span>
                                 <strong data-selected-line-label>Linie {{ $initialJobs['selected_line'] }}</strong>
@@ -156,12 +156,6 @@
                                 @endif
                             </div>
 
-                            <section class="job-order-card__detail" data-job-detail-panel hidden>
-                                <button class="job-order-card__back" type="button" data-close-job-detail>
-                                    ← Zurück zu Aufträgen
-                                </button>
-                                <div class="job-order-card__section" data-job-detail-content></div>
-                            </section>
                         @else
                             <div class="job-order-card__empty">
                                 <p class="panel-card__eyebrow">Aktueller Auftrag</p>

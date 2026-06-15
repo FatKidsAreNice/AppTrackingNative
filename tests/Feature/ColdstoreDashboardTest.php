@@ -56,9 +56,11 @@ it('renders the compact jobs overview for the mobile workflow', function () {
         ->assertDontSee('123,45 kg')
         ->assertSee('data-open-job-detail="current"', false)
         ->assertSee('data-open-job-detail="next"', false)
-        ->assertSee('data-job-detail-panel hidden', false)
-        ->assertSee('data-close-job-detail', false)
-        ->assertSee('← Zurück zu Aufträgen', false)
+        ->assertSee('data-jobs-panel', false)
+        ->assertSee('data-jobs-line-selector', false)
+        ->assertDontSee('data-job-detail-panel', false)
+        ->assertDontSee('data-close-job-detail', false)
+        ->assertDontSee('← Zurück zu Aufträgen', false)
         ->assertSee('"matching_uids":[{"uid":"UID-L6-A"', false)
         ->assertSee('"next_matching_uids":[{"uid":"UID-L1-A"', false)
         ->assertSee('"dataSource":"local"', false)
@@ -98,9 +100,50 @@ it('uses the emphasized required pe text suffix formatting across the jobs ui re
         ->toContain('<dt>Material</dt>')
         ->toContain('<strong class="required-pe-text1__suffix">')
         ->toContain('<dd>${formatRequiredPeText1(order.required_pe_text1)}</dd>')
-        ->toContain('<dd data-job-detail-required-pe>${formatRequiredPeText1(order?.required_pe_text1)}</dd>')
+        ->toContain('<dd>${formatRequiredPeText1(detail.order?.required_pe_text1)}</dd>')
         ->and($blade)
         ->toContain('<strong class="required-pe-text1__suffix">');
+});
+
+it('uses a jobs view state that replaces the overview with the selected detail view', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+    $js = file_get_contents(resource_path('js/coldstore-app.js'));
+    $blade = file_get_contents(resource_path('views/coldstore/dashboard.blade.php'));
+
+    expect($js)
+        ->toContain("jobsView: 'overview'")
+        ->toContain('selectedOrderKind: null')
+        ->toContain('jobOrder.innerHTML = renderJobDetailPanel(detail);')
+        ->toContain('jobOrder.innerHTML = renderJobOverview();')
+        ->toContain("state.jobsView = 'detail';")
+        ->toContain('state.selectedOrderKind = button.dataset.openJobDetail ?? null;')
+        ->toContain('scrollJobsDetailIntoView();')
+        ->toContain("const shouldShowLineSelector = state.jobsView === 'overview';")
+        ->toContain('linePicker.hidden = !shouldShowLineSelector;')
+        ->toContain('setLinePickerOpen(false);')
+        ->toContain("const detail = root.querySelector('[data-jobs-detail]');")
+        ->toContain("const panel = root.querySelector('[data-jobs-panel]');")
+        ->toContain('target.scrollIntoView({')
+        ->toContain('data-jobs-view="overview"')
+        ->toContain('data-jobs-view="detail"')
+        ->toContain('data-jobs-detail')
+        ->toContain('← Zurück zu Aufträgen')
+        ->toContain('${renderMatchingUids(detail.matchingUids)}')
+        ->and($css)
+        ->toContain('.coldstore-surface-mobile .panel-card--jobs')
+        ->toContain('align-self: stretch;')
+        ->toContain('.coldstore-surface-mobile .job-order-card__detail')
+        ->toContain('align-content: start;')
+        ->toContain('.coldstore-surface-mobile {')
+        ->toContain('overscroll-behavior: none;')
+        ->toContain('.coldstore-surface-mobile [data-jobs-detail]')
+        ->toContain('scroll-margin-top: 0.75rem;')
+        ->toContain('[data-jobs-line-selector][hidden]')
+        ->toContain('display: none !important;')
+        ->and($blade)
+        ->toContain('data-jobs-panel')
+        ->toContain('data-jobs-line-selector')
+        ->not->toContain('data-job-detail-panel hidden');
 });
 
 it('renders a neutral loading jobs state for remote api mode', function () {
