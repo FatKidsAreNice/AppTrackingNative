@@ -1,5 +1,7 @@
 import { Camera, Events, Off, On } from '#nativephp';
 
+const CABINET_SCRAP_RATE = 0.10;
+
 const csrfToken = document
     .querySelector('meta[name="csrf-token"]')
     ?.getAttribute('content');
@@ -411,15 +413,21 @@ function bootDashboard() {
         render();
 
         requestAnimationFrame(() => {
+            const mapElement = root.querySelector('[data-coldstore-overview-map]');
             const highlightedElement = matchingTrack
-                ? root.querySelector(`[data-select-track="${matchingTrack.track_id}"]`)
+                ? root.querySelector(`[data-coldstore-track-id="${matchingTrack.track_id}"]`)
                 : null;
 
-            highlightedElement?.scrollIntoView({
+            mapElement?.scrollIntoView({
                 block: 'center',
                 inline: 'nearest',
                 behavior: 'smooth',
             });
+
+            highlightedElement?.classList.add('track-node--pulse');
+            window.setTimeout(() => {
+                highlightedElement?.classList.remove('track-node--pulse');
+            }, 1400);
         });
     }
 
@@ -634,7 +642,51 @@ function bootDashboard() {
         })} kg`;
     }
 
-    function renderNextMatchingUids(matchingUids) {
+    function numericWeight(weightKg) {
+        if (weightKg === null || weightKg === undefined) {
+            return null;
+        }
+
+        const parsedWeight = Number(weightKg);
+
+        return Number.isFinite(parsedWeight) ? parsedWeight : null;
+    }
+
+    function buildCabinetWeightBreakdown(netWeightKg, orderWeightKg) {
+        const normalizedNetWeightKg = numericWeight(netWeightKg);
+
+        if (normalizedNetWeightKg === null) {
+            return null;
+        }
+
+        const scrapWeightKg = normalizedNetWeightKg * CABINET_SCRAP_RATE;
+        const availableWeightKg = normalizedNetWeightKg - scrapWeightKg;
+        const normalizedOrderWeightKg = numericWeight(orderWeightKg);
+
+        if (normalizedOrderWeightKg === null) {
+            return {
+                netWeightKg: normalizedNetWeightKg,
+                scrapWeightKg,
+                availableWeightKg,
+                orderWeightKg: null,
+                remainingAfterOrderKg: null,
+                missingWeightKg: null,
+            };
+        }
+
+        const remainingAfterOrderKg = availableWeightKg - normalizedOrderWeightKg;
+
+        return {
+            netWeightKg: normalizedNetWeightKg,
+            scrapWeightKg,
+            availableWeightKg,
+            orderWeightKg: normalizedOrderWeightKg,
+            remainingAfterOrderKg: remainingAfterOrderKg >= 0 ? remainingAfterOrderKg : null,
+            missingWeightKg: remainingAfterOrderKg < 0 ? Math.abs(remainingAfterOrderKg) : null,
+        };
+    }
+
+function renderNextMatchingUids(matchingUids) {
         if (matchingUids.length === 0) {
             return '<p class="panel-card__muted job-order-card__note">Keine passende UID fuer den Folgeauftrag gefunden.</p>';
         }
@@ -864,7 +916,7 @@ function bootDashboard() {
                         <dt>Menge</dt>
                         <dd>${formatOrderQuantity(detail.order?.va_menge_kg)}</dd>
                         <dt>Passende UIDs</dt>
-                        <dd>${renderMatchingUids(detail.matchingUids)}</dd>
+                        <dd>${renderMatchingUids(detail.matchingUids, detail.order?.va_menge_kg)}</dd>
                     </dl>
                 </div>
             </section>
@@ -948,7 +1000,7 @@ function bootDashboard() {
         return order?.required_product_name ?? order?.matstamm_maktx ?? '—';
     }
 
-    function renderMatchingUids(matchingUids) {
+    function renderMatchingUids(matchingUids, orderWeightKg = null) {
         if (matchingUids.length === 0) {
             return '<span class="panel-card__muted">Keine passende UID im Kühlhaus registriert</span>';
         }
@@ -956,13 +1008,27 @@ function bootDashboard() {
         return `
             <div class="job-order-card__matches">
                 ${matchingUids
-            .map((matchingUid) => `
+            .map((matchingUid) => {
+                const weightBreakdown = buildCabinetWeightBreakdown(
+                    matchingUid.cabinet_content?.net_weight_kg ?? null,
+                    orderWeightKg,
+                );
+
+                return `
                         <button class="job-order-card__match-button" type="button" data-open-overview-uid="${escapeHtml(matchingUid.uid)}">
                             <strong>UID: ${escapeHtml(matchingUid.uid)}</strong>
-                            <small>Gewicht: ${escapeHtml(formatCabinetWeight(matchingUid.cabinet_content?.net_weight_kg ?? null))}</small>
+                            ${weightBreakdown ? `
+                                <small>Netto: ${escapeHtml(formatCabinetWeight(weightBreakdown.netWeightKg))}</small>
+                                <small>Verschnitt ca. 10 %: ${escapeHtml(formatCabinetWeight(weightBreakdown.scrapWeightKg))}</small>
+                                <small>Verfuegbar: ${escapeHtml(formatCabinetWeight(weightBreakdown.availableWeightKg))}</small>
+                                ${weightBreakdown.orderWeightKg === null ? '' : `<small>Auftragsmenge: ${escapeHtml(formatCabinetWeight(weightBreakdown.orderWeightKg))}</small>`}
+                                ${weightBreakdown.remainingAfterOrderKg !== null ? `<small>Rest nach Auftrag: ${escapeHtml(formatCabinetWeight(weightBreakdown.remainingAfterOrderKg))}</small>` : ''}
+                                ${weightBreakdown.missingWeightKg !== null ? `<small>Fehlt: ${escapeHtml(formatCabinetWeight(weightBreakdown.missingWeightKg))}</small>` : ''}
+                            ` : ''}
                             <small>Nach: ${escapeHtml(matchingUid.cabinet_content?.lager_nach_name ?? 'unbekannt')}</small>
                         </button>
-                    `)
+                    `;
+            })
             .join('')}
             </div>
         `;
@@ -988,6 +1054,7 @@ function bootDashboard() {
 
                 return `
                     <circle
+                        class="track-node ${isHighlighted ? 'track-node--highlighted' : ''}"
                         cx="${point.x}"
                         cy="${point.y}"
                         r="${radius}"
@@ -995,6 +1062,8 @@ function bootDashboard() {
                         stroke="${isSelected ? '#111827' : (isHighlighted ? '#0f3a63' : 'none')}"
                         stroke-width="${isSelected ? '0.45' : (isHighlighted ? '0.65' : '0')}"
                         data-track-node="${track.track_id}"
+                        data-coldstore-track-id="${track.track_id}"
+                        data-coldstore-track-uid="${escapeHtml(track.barcode_id || '')}"
                     ></circle>
                 `;
             })

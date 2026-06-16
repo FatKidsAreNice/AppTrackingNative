@@ -731,6 +731,28 @@ body.coldstore-body textarea {
     cursor: pointer;
 }
 
+.track-node--highlighted {
+    filter: drop-shadow(0 0 0.45rem rgb(15 58 99 / 0.55));
+}
+
+.track-node--pulse {
+    animation: coldstore-track-pulse 1.2s ease-out;
+}
+
+@keyframes coldstore-track-pulse {
+    0% {
+        filter: drop-shadow(0 0 0 rgb(15 58 99 / 0));
+    }
+
+    35% {
+        filter: drop-shadow(0 0 0.8rem rgb(15 58 99 / 0.78));
+    }
+
+    100% {
+        filter: drop-shadow(0 0 0.45rem rgb(15 58 99 / 0.55));
+    }
+}
+
 .stack-list,
 .track-list,
 .section-grid,

@@ -33,7 +33,7 @@
                         <p class="panel-card__muted" data-updated-at>{{ $initialOverview['meta']['updated_at'] }}</p>
                     </div>
                     <p class="panel-card__description" data-coldstore-summary>{{ $initialOverview['coldstore']['summary'] }}</p>
-                    <div class="map-frame">
+                    <div class="map-frame" data-coldstore-overview-map>
                         <div class="bev-map-header panel-card__header">
                             <div>
                                 <p class="panel-card__eyebrow">BEV</p>
