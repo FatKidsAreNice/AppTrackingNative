@@ -34,9 +34,18 @@ it('proxies overview data from the remote pc', function () {
                 [
                     'track_id' => 7,
                     'barcode_id' => '',
-                    'class_name' => 'rack_side',
+                    'class_label' => 'rack_side',
                     'state' => 'confirmed',
                     'motion_state' => 'static',
+                    'identity_state' => 'direct',
+                    'identity_confidence' => 1.0,
+                    'marriage_state' => 'unassigned_new',
+                    'is_marriage_eligible' => true,
+                    'eligibility_reason' => 'eligible',
+                    'eligibility_blockers' => [],
+                    'zone_label' => 'Reihe 4',
+                    'position_label' => 'x=1.20 y=2.50',
+                    'last_seen_age_sec' => 0.3,
                     'confidence' => 0.91,
                     'x' => 1.2,
                     'y' => 2.5,
@@ -62,9 +71,45 @@ it('proxies overview data from the remote pc', function () {
         ->assertJsonPath('meta.track_stamp_sec', 1050)
         ->assertJsonPath('tracks.0.track_id', 7)
         ->assertJsonPath('tracks.0.class_name', 'rack_side')
+        ->assertJsonPath('tracks.0.class_label', 'rack_side')
+        ->assertJsonPath('tracks.0.marriage_state', 'unassigned_new')
+        ->assertJsonPath('tracks.0.is_marriage_eligible', true)
+        ->assertJsonPath('tracks.0.eligibility_reason', 'eligible')
+        ->assertJsonPath('tracks.0.identity_state', 'direct')
+        ->assertJsonPath('tracks.0.zone_label', 'Reihe 4')
+        ->assertJsonPath('tracks.0.position_label', 'x=1.20 y=2.50')
         ->assertJsonPath('map.rotation_deg', 22)
         ->assertJsonPath('map.background_url', 'http://coldstore.test/overview-image')
         ->assertJsonPath('coldstore.name', 'Remote Haus');
+});
+
+it('defaults missing marriage metadata to a safe blocked state', function () {
+    Config::set('coldstore.remote.base_url', 'http://coldstore.test');
+    Config::set('coldstore.remote.overview_path', '/overview');
+    Http::fake([
+        'http://coldstore.test/overview' => Http::response([
+            'tracks' => [
+                [
+                    'track_id' => 9,
+                    'barcode_id' => '',
+                    'x' => 0.1,
+                    'y' => 0.2,
+                ],
+            ],
+            'highlighted_racks' => [],
+        ]),
+    ]);
+
+    $response = $this->getJson(route('api.coldstore.overview'));
+
+    $response->assertSuccessful()
+        ->assertJsonPath('tracks.0.track_id', 9)
+        ->assertJsonPath('tracks.0.marriage_state', 'unknown')
+        ->assertJsonPath('tracks.0.is_marriage_eligible', false)
+        ->assertJsonPath('tracks.0.eligibility_reason', 'unknown')
+        ->assertJsonPath('tracks.0.identity_state', 'unknown')
+        ->assertJsonPath('tracks.0.eligibility_blockers', [])
+        ->assertJsonPath('tracks.0.position_label', 'x=0.10 y=0.20');
 });
 
 it('falls back to demo data when the remote pc is unavailable', function () {

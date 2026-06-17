@@ -157,6 +157,15 @@ it('uses a jobs view state that replaces the overview with the selected detail v
         ->toContain("const mapElement = root.querySelector('[data-coldstore-overview-map]');")
         ->toContain('data-coldstore-track-id="${track.track_id}"')
         ->toContain('data-coldstore-track-uid="${escapeHtml(track.barcode_id || \'\')}"')
+        ->toContain("trackMarriageDraftUid: ''")
+        ->toContain('trackMarriageEndpoint')
+        ->toContain('function renderTrackMarriagePanel()')
+        ->toContain('function renderTrackMarriageDialog()')
+        ->toContain('function submitTrackMarriage()')
+        ->toContain('data-track-marriage-dialog')
+        ->toContain('track-row--${tone}')
+        ->toContain('track-node--${trackStatusTone(track)}')
+        ->toContain('humanizeEligibilityReason(selectedTrack.eligibility_reason)')
         ->toContain('mapElement?.scrollIntoView({')
         ->toContain("highlightedElement?.classList.add('track-node--pulse');")
         ->toContain('data-track-uid="${escapeHtml(track.barcode_id || \'\')}"')
@@ -178,7 +187,14 @@ it('uses a jobs view state that replaces the overview with the selected detail v
         ->toContain('scroll-margin-top: 0.75rem;')
         ->toContain('.job-order-card__match-button')
         ->toContain('.track-row--highlighted')
+        ->toContain('.track-row--assigned')
+        ->toContain('.track-row--existing')
+        ->toContain('.track-row--eligible')
+        ->toContain('.track-row--blocked')
         ->toContain('.track-node--highlighted')
+        ->toContain('.track-node--assigned')
+        ->toContain('.track-marriage-modal')
+        ->toContain('.track-marriage-button-secondary')
         ->toContain('.track-node--pulse')
         ->toContain('@keyframes coldstore-track-pulse')
         ->toContain('[data-jobs-line-selector][hidden]')
@@ -187,7 +203,28 @@ it('uses a jobs view state that replaces the overview with the selected detail v
         ->toContain('data-coldstore-overview-map')
         ->toContain('data-jobs-panel')
         ->toContain('data-jobs-line-selector')
+        ->toContain('data-track-marriage-endpoint')
+        ->toContain('data-track-marriage-form')
+        ->toContain('data-track-marriage-feedback')
+        ->toContain('data-track-marriage-dialog')
         ->not->toContain('data-job-detail-panel hidden');
+});
+
+it('renders the track marriage workflow hooks on the dashboard', function () {
+    Config::set('coldstore.remote.base_url', null);
+    Config::set('coldstore.jobs.data_source', 'local');
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
+
+    $response = $this->get(route('coldstore.dashboard'));
+
+    $response->assertSuccessful()
+        ->assertSee('UID Hochzeit')
+        ->assertSee('Track zuweisen')
+        ->assertSee('data-track-marriage-form', false)
+        ->assertSee('data-track-marriage-uid-input', false)
+        ->assertSee('data-track-marriage-feedback', false)
+        ->assertSee('data-track-marriage-dialog', false)
+        ->assertSee('data-track-marriage-confirm', false);
 });
 
 it('renders demo overview tracks with stable uid to track assignments for overview highlighting', function () {

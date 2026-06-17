@@ -42,6 +42,7 @@ class ColdstoreDashboardController extends Controller
             'jobLines' => $this->lineWorkplaceMapper->all(),
             'jobsApi' => $jobsApi,
             'pollIntervalMs' => config('coldstore.poll_interval_seconds') * 1000,
+            'trackMarriageEndpoint' => route('api.coldstore.track-marriages.store', absolute: false),
         ]);
     }
 
@@ -107,6 +108,7 @@ class ColdstoreDashboardController extends Controller
             'remoteBaseUrl' => config('coldstore.remote.base_url'),
             'remoteOverviewPath' => config('coldstore.remote.overview_path'),
             'remoteBarcodePath' => config('coldstore.remote.barcode_path'),
+            'remoteTrackMarriagePath' => config('coldstore.remote.assignment_path'),
             'pollIntervalSeconds' => config('coldstore.poll_interval_seconds'),
             'scannerId' => config('coldstore.scanner.id'),
             'scanDirection' => config('coldstore.scanner.direction'),

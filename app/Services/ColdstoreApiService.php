@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
@@ -64,6 +65,39 @@ class ColdstoreApiService
             'message' => 'Barcode erfolgreich an den anderen PC gesendet.',
             'scan' => $scan,
             'remote_response' => $response,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array{status: int, body: array<string, mixed>}
+     */
+    public function assignTrackMarriage(array $payload): array
+    {
+        if (! $this->hasRemoteBaseUrl()) {
+            throw new RuntimeException('Kein Remote-Endpunkt fuer Track-Assignment konfiguriert.');
+        }
+
+        $assignmentPayload = [
+            'track_id' => (int) $payload['track_id'],
+            'uid' => trim((string) $payload['uid']),
+            'mode' => 'manual_overview_assignment',
+        ];
+
+        try {
+            $response = $this->client()->post(
+                '/'.ltrim((string) config('coldstore.remote.assignment_path'), '/'),
+                $assignmentPayload,
+            );
+        } catch (Throwable $throwable) {
+            throw new RuntimeException('Die UID-Zuordnung konnte nicht an den anderen PC gesendet werden.', 0, $throwable);
+        }
+
+        $decoded = $this->decodeRemoteJsonResponse($response);
+
+        return [
+            'status' => $response->status(),
+            'body' => $decoded,
         ];
     }
 
@@ -171,14 +205,32 @@ class ColdstoreApiService
     {
         $trackId = (int) ($track['track_id'] ?? 0);
         $barcodeId = trim((string) ($track['barcode_id'] ?? ''));
+        $lastSeenAgeSec = isset($track['last_seen_age_sec'])
+            ? (float) $track['last_seen_age_sec']
+            : max(0, (float) ($track['stamp_sec'] ?? 0) - (float) ($track['last_stamp_sec'] ?? 0));
+        $eligibilityBlockers = collect($track['eligibility_blockers'] ?? [])
+            ->filter(fn (mixed $blocker): bool => is_string($blocker) && trim($blocker) !== '')
+            ->values()
+            ->all();
 
         return [
             'track_id' => $trackId,
             'display_id' => $lookupMode === 'barcode_id' && $barcodeId !== '' ? $barcodeId : 'T'.$trackId,
             'barcode_id' => $barcodeId,
-            'class_name' => (string) ($track['class_name'] ?? '-'),
+            'class_name' => (string) ($track['class_name'] ?? $track['class_label'] ?? '-'),
+            'class_label' => (string) ($track['class_label'] ?? $track['class_name'] ?? '-'),
             'state' => (string) ($track['state'] ?? '-'),
             'motion_state' => (string) ($track['motion_state'] ?? '-'),
+            'identity_state' => (string) ($track['identity_state'] ?? 'unknown'),
+            'identity_confidence' => isset($track['identity_confidence']) ? (float) $track['identity_confidence'] : null,
+            'marriage_state' => (string) ($track['marriage_state'] ?? 'unknown'),
+            'is_marriage_eligible' => (bool) ($track['is_marriage_eligible'] ?? false),
+            'eligibility_reason' => (string) ($track['eligibility_reason'] ?? 'unknown'),
+            'eligibility_blockers' => $eligibilityBlockers,
+            'last_seen_age_sec' => $lastSeenAgeSec,
+            'zone_label' => trim((string) ($track['zone_label'] ?? 'Unbekannte Zone')),
+            'position_label' => trim((string) ($track['position_label'] ?? sprintf('x=%.2f y=%.2f', (float) ($track['x'] ?? 0), (float) ($track['y'] ?? 0)))),
+            'source_track_id' => isset($track['source_track_id']) ? (int) $track['source_track_id'] : null,
             'confidence' => round((float) ($track['confidence'] ?? 0), 3),
             'x' => (float) ($track['x'] ?? 0),
             'y' => (float) ($track['y'] ?? 0),
@@ -345,6 +397,15 @@ class ColdstoreApiService
                     'class_name' => 'rack_side',
                     'state' => 'confirmed',
                     'motion_state' => 'moving',
+                    'identity_state' => 'direct',
+                    'identity_confidence' => 1.0,
+                    'marriage_state' => 'known_existing',
+                    'is_marriage_eligible' => false,
+                    'eligibility_reason' => 'known_existing',
+                    'eligibility_blockers' => ['known_existing'],
+                    'zone_label' => 'Bestand Nord',
+                    'position_label' => 'x=-9.20 y=2.40',
+                    'source_track_id' => 1001,
                     'confidence' => 0.98,
                     'x' => -9.2,
                     'y' => 2.4,
@@ -373,6 +434,15 @@ class ColdstoreApiService
                     'class_name' => 'rack_side',
                     'state' => 'confirmed',
                     'motion_state' => 'static',
+                    'identity_state' => 'direct',
+                    'identity_confidence' => 1.0,
+                    'marriage_state' => 'assigned',
+                    'is_marriage_eligible' => false,
+                    'eligibility_reason' => 'track_already_assigned',
+                    'eligibility_blockers' => ['track_already_assigned'],
+                    'zone_label' => 'Reihe 4',
+                    'position_label' => 'x=-2.70 y=-3.10',
+                    'source_track_id' => 1204,
                     'confidence' => 0.88,
                     'x' => -2.7,
                     'y' => -3.1,
@@ -403,5 +473,19 @@ class ColdstoreApiService
                 'summary' => 'Demo-Ansicht bis die Remote-API erreichbar ist.',
             ],
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function decodeRemoteJsonResponse(Response $response): array
+    {
+        $decoded = $response->json();
+
+        if (! is_array($decoded)) {
+            throw new RuntimeException('Die Remote-API hat kein JSON-Objekt geliefert.');
+        }
+
+        return $decoded;
     }
 }

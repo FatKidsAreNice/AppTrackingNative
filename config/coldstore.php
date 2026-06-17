@@ -16,6 +16,7 @@ return [
         'base_url' => env('COLDSTORE_REMOTE_BASE_URL', 'http://10.10.121.30:8000'),
         'overview_path' => env('COLDSTORE_REMOTE_OVERVIEW_PATH', '/overview'),
         'barcode_path' => env('COLDSTORE_REMOTE_BARCODE_PATH', '/barcode-scan'),
+        'assignment_path' => env('COLDSTORE_REMOTE_ASSIGNMENT_PATH', '/track-marriages'),
         'timeout_seconds' => (int) env('COLDSTORE_REMOTE_TIMEOUT_SECONDS', 4),
     ],
     'jobs' => [

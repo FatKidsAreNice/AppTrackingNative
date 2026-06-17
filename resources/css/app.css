@@ -731,6 +731,13 @@ body.coldstore-body textarea {
     cursor: pointer;
 }
 
+.track-node--assigned,
+.track-node--existing,
+.track-node--eligible,
+.track-node--blocked {
+    transition: filter 160ms ease;
+}
+
 .track-node--highlighted {
     filter: drop-shadow(0 0 0.45rem rgb(15 58 99 / 0.55));
 }
@@ -822,6 +829,26 @@ body.coldstore-body textarea {
     box-shadow: 0 0 0 3px rgb(15 58 99 / 0.14);
 }
 
+.track-row--assigned {
+    border-color: rgb(15 139 109 / 0.28);
+    background: rgb(15 139 109 / 0.08);
+}
+
+.track-row--existing {
+    border-color: rgb(100 116 139 / 0.24);
+    background: rgb(148 163 184 / 0.08);
+}
+
+.track-row--eligible {
+    border-color: rgb(217 119 6 / 0.35);
+    background: rgb(251 191 36 / 0.12);
+}
+
+.track-row--blocked {
+    border-color: rgb(215 25 32 / 0.3);
+    background: rgb(215 25 32 / 0.06);
+}
+
 .job-row--active {
     border-color: rgb(15 58 99 / 0.45);
     background:
@@ -850,6 +877,65 @@ body.coldstore-body textarea {
 .detail-grid dd {
     margin: 0;
     color: #111827;
+}
+
+.track-marriage-form,
+.track-marriage-panel,
+.track-marriage-actions {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.track-marriage-form {
+    margin-top: 1rem;
+}
+
+.track-marriage-actions {
+    align-content: start;
+}
+
+.track-marriage-button-secondary {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 9999px;
+    padding: 0.8rem 1.15rem;
+    background: white;
+    color: var(--coldstore-blue);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.track-marriage-modal[hidden] {
+    display: none !important;
+}
+
+.track-marriage-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+}
+
+.track-marriage-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgb(15 23 42 / 0.45);
+    backdrop-filter: blur(4px);
+}
+
+.track-marriage-modal__card {
+    position: relative;
+    z-index: 1;
+    width: min(32rem, 100%);
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 1px solid rgb(255 255 255 / 0.7);
+    border-radius: 1.5rem;
+    background: rgb(255 255 255 / 0.96);
+    box-shadow: 0 20px 50px rgb(15 23 42 / 0.24);
 }
 
 .section-grid {

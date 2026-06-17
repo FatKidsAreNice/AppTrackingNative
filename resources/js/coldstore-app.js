@@ -46,6 +46,7 @@ function bootDashboard() {
     }
 
     const overviewEndpoint = root.dataset.overviewEndpoint;
+    const trackMarriageEndpoint = root.dataset.trackMarriageEndpoint;
     const pollInterval = Number(root.dataset.pollInterval ?? '5000');
     const initialOverview = window.coldstoreDashboardConfig ?? {};
     const initialJobs = window.coldstoreDashboardInitialJobs ?? {};
@@ -69,6 +70,10 @@ function bootDashboard() {
         highlightedTrackId: null,
         highlightedTrackUid: null,
         overviewHighlightMessage: null,
+        trackMarriageDraftUid: '',
+        trackMarriageFeedback: null,
+        trackMarriageSubmitting: false,
+        trackMarriageConfirmOpen: false,
         trackSessionSeenAt: {},
         mapBackgroundCache: {
             [initialFrameId]: {
@@ -99,11 +104,43 @@ function bootDashboard() {
     const detailTitle = root.querySelector('[data-detail-title]');
     const filterInput = root.querySelector('[data-track-filter]');
     const refreshButton = root.querySelector('[data-refresh-overview]');
+    const trackMarriageForm = root.querySelector('[data-track-marriage-form]');
+    const trackMarriageStatus = root.querySelector('[data-track-marriage-status]');
+    const trackMarriageSummary = root.querySelector('[data-track-marriage-summary]');
+    const trackMarriageFeedback = root.querySelector('[data-track-marriage-feedback]');
+    const trackMarriageUidInput = root.querySelector('[data-track-marriage-uid-input]');
+    const trackMarriageMeta = root.querySelector('[data-track-marriage-meta]');
+    const trackMarriageHelper = root.querySelector('[data-track-marriage-helper]');
+    const trackMarriageOpenConfirmButton = root.querySelector('[data-track-marriage-open-confirm]');
+    const trackMarriageDialog = root.querySelector('[data-track-marriage-dialog]');
+    const trackMarriageDialogSummary = root.querySelector('[data-track-marriage-dialog-summary]');
+    const trackMarriageDialogDetail = root.querySelector('[data-track-marriage-dialog-detail]');
+    const trackMarriageConfirmButton = root.querySelector('[data-track-marriage-confirm]');
     const rootStyles = window.getComputedStyle(document.documentElement);
 
     filterInput?.addEventListener('input', (event) => {
         state.filter = event.target.value.toLowerCase();
         render();
+    });
+
+    trackMarriageUidInput?.addEventListener('input', (event) => {
+        state.trackMarriageDraftUid = event.target.value;
+        renderTrackMarriagePanel();
+    });
+
+    trackMarriageForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        openTrackMarriageConfirm();
+    });
+
+    trackMarriageDialog?.querySelectorAll('[data-track-marriage-cancel]').forEach((button) => {
+        button.addEventListener('click', () => {
+            closeTrackMarriageConfirm();
+        });
+    });
+
+    trackMarriageConfirmButton?.addEventListener('click', async () => {
+        await submitTrackMarriage();
     });
 
     refreshButton?.addEventListener('click', async () => {
@@ -123,6 +160,10 @@ function bootDashboard() {
     });
 
     document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && state.trackMarriageConfirmOpen) {
+            closeTrackMarriageConfirm();
+        }
+
         if (event.key === 'Escape') {
             setLinePickerOpen(false);
         }
@@ -305,6 +346,10 @@ function bootDashboard() {
                 }
             }
 
+            if (!trackIsEligible(findSelectedTrack())) {
+                state.trackMarriageConfirmOpen = false;
+            }
+
             render();
         } catch (error) {
             if (subtitle) {
@@ -389,6 +434,13 @@ function bootDashboard() {
         state.highlightedTrackId = Number(trackId);
         state.highlightedTrackUid = highlightedUid ? String(highlightedUid) : null;
         state.overviewHighlightMessage = null;
+        state.trackMarriageConfirmOpen = false;
+
+        if (trackIsEligible(findSelectedTrack())) {
+            requestAnimationFrame(() => {
+                trackMarriageUidInput?.focus();
+            });
+        }
     }
 
     function openOverviewForUid(uid) {
@@ -495,8 +547,196 @@ function bootDashboard() {
         return `${hours}:${minutes}:${secs}`;
     }
 
-    function trackColor() {
+    function trackIsEligible(track) {
+        return Boolean(track?.is_marriage_eligible);
+    }
+
+    function hasTrackMarriageDraftUid() {
+        return String(state.trackMarriageDraftUid ?? '').trim() !== '';
+    }
+
+    function trackStatusTone(track) {
+        if (track?.marriage_state === 'assigned' || String(track?.barcode_id ?? '').trim() !== '') {
+            return 'assigned';
+        }
+
+        if (track?.marriage_state === 'known_existing') {
+            return 'existing';
+        }
+
+        if (trackIsEligible(track)) {
+            return 'eligible';
+        }
+
+        return 'blocked';
+    }
+
+    function trackColor(track) {
+        const tone = trackStatusTone(track);
+
+        if (tone === 'assigned') {
+            return '#0f8b6d';
+        }
+
+        if (tone === 'existing') {
+            return '#64748b';
+        }
+
+        if (tone === 'eligible') {
+            return '#d97706';
+        }
+
         return '#d71920';
+    }
+
+    function trackStatusLabel(track) {
+        const tone = trackStatusTone(track);
+
+        if (tone === 'assigned') {
+            return 'Assigned';
+        }
+
+        if (tone === 'existing') {
+            return 'Bestand';
+        }
+
+        if (tone === 'eligible') {
+            return 'Bereit zur Hochzeit';
+        }
+
+        return 'Gesperrt';
+    }
+
+    function humanizeEligibilityReason(reason) {
+        const normalizedReason = String(reason ?? 'unknown').trim();
+        const reasonLabels = {
+            eligible: 'Track ist bereit zur Hochzeit.',
+            known_existing: 'Track gehoert zum Startbestand und ist gesperrt.',
+            track_already_assigned: 'Track hat bereits eine UID.',
+            track_moving: 'Track bewegt sich noch.',
+            motion_state_moving: 'Track bewegt sich noch.',
+            track_lost: 'Track ist aktuell nicht sicher sichtbar.',
+            track_not_visible: 'Track ist aktuell nicht sicher sichtbar.',
+            identity_recovered_weak: 'Track wurde nur unsicher wiedergefunden.',
+            identity_not_safe: 'Die Identitaet des Tracks ist nicht sicher genug.',
+            not_confirmed: 'Track ist noch nicht bestaetigt.',
+            outside_storage_zone: 'Track steht nicht in einer gueltigen Lagerzone.',
+            unknown: 'Remote-Status fehlt oder ist noch nicht verfuegbar.',
+        };
+
+        return reasonLabels[normalizedReason] ?? `Grund: ${normalizedReason}`;
+    }
+
+    function formatEligibilityBlockers(track) {
+        const blockers = Array.isArray(track?.eligibility_blockers) ? track.eligibility_blockers : [];
+
+        if (blockers.length === 0) {
+            return humanizeEligibilityReason(track?.eligibility_reason);
+        }
+
+        return blockers
+            .map((blocker) => humanizeEligibilityReason(blocker))
+            .join(' ');
+    }
+
+    function formatIdentityConfidence(value) {
+        const numericValue = Number(value);
+
+        if (!Number.isFinite(numericValue)) {
+            return '-';
+        }
+
+        return numericValue.toFixed(2);
+    }
+
+    function setTrackMarriageFeedback(type, message) {
+        state.trackMarriageFeedback = {
+            type,
+            message,
+        };
+    }
+
+    function clearTrackMarriageFeedback() {
+        state.trackMarriageFeedback = null;
+    }
+
+    function closeTrackMarriageConfirm() {
+        state.trackMarriageConfirmOpen = false;
+        renderTrackMarriageDialog();
+    }
+
+    function openTrackMarriageConfirm() {
+        const selectedTrack = findSelectedTrack();
+
+        if (!selectedTrack) {
+            setTrackMarriageFeedback('warn', 'Bitte waehle zuerst einen Track aus.');
+            renderTrackMarriagePanel();
+
+            return;
+        }
+
+        if (!trackIsEligible(selectedTrack)) {
+            setTrackMarriageFeedback('warn', formatEligibilityBlockers(selectedTrack));
+            renderTrackMarriagePanel();
+
+            return;
+        }
+
+        if (!hasTrackMarriageDraftUid()) {
+            setTrackMarriageFeedback('warn', 'Bitte scanne oder erfasse zuerst eine UID.');
+            renderTrackMarriagePanel();
+
+            return;
+        }
+
+        clearTrackMarriageFeedback();
+        state.trackMarriageConfirmOpen = true;
+        renderTrackMarriageDialog();
+    }
+
+    async function submitTrackMarriage() {
+        const selectedTrack = findSelectedTrack();
+        const normalizedUid = String(state.trackMarriageDraftUid ?? '').trim();
+
+        if (!selectedTrack || !trackIsEligible(selectedTrack) || normalizedUid === '') {
+            openTrackMarriageConfirm();
+
+            return;
+        }
+
+        state.trackMarriageSubmitting = true;
+        renderTrackMarriagePanel();
+        renderTrackMarriageDialog();
+
+        try {
+            const response = await fetch(trackMarriageEndpoint, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({
+                    track_id: selectedTrack.track_id,
+                    uid: normalizedUid,
+                }),
+            });
+            const json = await response.json();
+
+            if (!response.ok) {
+                throw new Error(json.message ?? json.reason ?? 'UID-Zuordnung fehlgeschlagen.');
+            }
+
+            setTrackMarriageFeedback('ok', json.message ?? `UID ${normalizedUid} wurde Track T${selectedTrack.track_id} zugeordnet.`);
+            state.trackMarriageDraftUid = '';
+            state.trackMarriageConfirmOpen = false;
+            await refreshOverview();
+        } catch (error) {
+            setTrackMarriageFeedback('warn', error.message ?? 'UID-Zuordnung fehlgeschlagen.');
+        } finally {
+            state.trackMarriageSubmitting = false;
+            render();
+        }
     }
 
     function renderLinePicker() {
@@ -1054,11 +1294,11 @@ function renderNextMatchingUids(matchingUids) {
 
                 return `
                     <circle
-                        class="track-node ${isHighlighted ? 'track-node--highlighted' : ''}"
+                        class="track-node track-node--${trackStatusTone(track)} ${isHighlighted ? 'track-node--highlighted' : ''}"
                         cx="${point.x}"
                         cy="${point.y}"
                         r="${radius}"
-                        fill="${trackColor()}"
+                        fill="${trackColor(track)}"
                         stroke="${isSelected ? '#111827' : (isHighlighted ? '#0f3a63' : 'none')}"
                         stroke-width="${isSelected ? '0.45' : (isHighlighted ? '0.65' : '0')}"
                         data-track-node="${track.track_id}"
@@ -1099,21 +1339,23 @@ function renderNextMatchingUids(matchingUids) {
             .map((track) => {
                 const selected = track.track_id === Number(state.selectedTrackId);
                 const highlighted = track.track_id === Number(state.highlightedTrackId);
+                const tone = trackStatusTone(track);
+                const blockedReason = trackIsEligible(track) ? humanizeEligibilityReason('eligible') : formatEligibilityBlockers(track);
 
                 return `
                     <button
-                        class="track-row ${selected ? 'track-row--active' : ''} ${highlighted ? 'track-row--highlighted' : ''}"
+                        class="track-row track-row--${tone} ${selected ? 'track-row--active' : ''} ${highlighted ? 'track-row--highlighted' : ''}"
                         type="button"
                         data-select-track="${track.track_id}"
                         data-track-uid="${escapeHtml(track.barcode_id || '')}"
                     >
                         <span>
                             <strong>${track.display_id}</strong>
-                            <small>Position x=${track.x.toFixed(2)}, y=${track.y.toFixed(2)}</small>
+                            <small>${escapeHtml(track.position_label || `x=${track.x.toFixed(2)}, y=${track.y.toFixed(2)}`)}</small>
                         </span>
                         <span>
-                            <strong>${selected ? 'Ausgewählt' : (highlighted ? 'Markiert' : 'Track')}</strong>
-                            <small>${track.barcode_id || 'Kein Barcode'}</small>
+                            <strong>${selected ? 'Ausgewahlt' : trackStatusLabel(track)}</strong>
+                            <small>${escapeHtml(track.barcode_id || blockedReason)}</small>
                         </span>
                     </button>
                 `;
@@ -1163,7 +1405,17 @@ function renderNextMatchingUids(matchingUids) {
         detailList.innerHTML = [
             ['Track ID', selectedTrack.track_id],
             ['Barcode', selectedTrack.barcode_id || '-'],
-            ['Position', `x=${selectedTrack.x.toFixed(3)}, y=${selectedTrack.y.toFixed(3)}, z=${selectedTrack.z.toFixed(3)}`],
+            ['Marriage State', selectedTrack.marriage_state || 'unknown'],
+            ['Heiratsfaehig', selectedTrack.is_marriage_eligible ? 'Ja' : 'Nein'],
+            ['Grund', humanizeEligibilityReason(selectedTrack.eligibility_reason)],
+            ['Blocker', formatEligibilityBlockers(selectedTrack)],
+            ['Zone', selectedTrack.zone_label || '-'],
+            ['Position', selectedTrack.position_label || `x=${selectedTrack.x.toFixed(3)}, y=${selectedTrack.y.toFixed(3)}, z=${selectedTrack.z.toFixed(3)}`],
+            ['State', selectedTrack.state || '-'],
+            ['Motion', selectedTrack.motion_state || '-'],
+            ['Identity', selectedTrack.identity_state || 'unknown'],
+            ['Identity Confidence', formatIdentityConfidence(selectedTrack.identity_confidence)],
+            ['Last Seen Age', formatTrackerStamp(selectedTrack.last_seen_age_sec)],
             ['In Ansicht seit', new Date(sessionSeenAt).toLocaleTimeString('de-DE')],
             ['Dauer in Ansicht', formatDuration(Date.now() - sessionSeenAt)],
             ['Letzte Sichtung', formatLastSeenTime(selectedTrack.last_stamp_sec)],
@@ -1195,6 +1447,154 @@ function renderNextMatchingUids(matchingUids) {
         }
     }
 
+    function renderTrackMarriageFeedback() {
+        if (!trackMarriageFeedback) {
+            return;
+        }
+
+        if (!state.trackMarriageFeedback?.message) {
+            trackMarriageFeedback.hidden = true;
+            trackMarriageFeedback.textContent = '';
+            trackMarriageFeedback.classList.remove('callout--ok', 'callout--warn');
+
+            return;
+        }
+
+        trackMarriageFeedback.hidden = false;
+        trackMarriageFeedback.textContent = state.trackMarriageFeedback.message;
+        trackMarriageFeedback.classList.toggle('callout--ok', state.trackMarriageFeedback.type === 'ok');
+        trackMarriageFeedback.classList.toggle('callout--warn', state.trackMarriageFeedback.type !== 'ok');
+    }
+
+    function renderTrackMarriagePanel() {
+        const selectedTrack = findSelectedTrack();
+
+        if (trackMarriageUidInput && trackMarriageUidInput.value !== state.trackMarriageDraftUid) {
+            trackMarriageUidInput.value = state.trackMarriageDraftUid;
+        }
+
+        renderTrackMarriageFeedback();
+
+        if (!selectedTrack) {
+            if (trackMarriageStatus) {
+                trackMarriageStatus.textContent = 'Warten auf Auswahl';
+                trackMarriageStatus.classList.add('status-pill--warn');
+                trackMarriageStatus.classList.remove('status-pill--ok');
+            }
+
+            if (trackMarriageSummary) {
+                trackMarriageSummary.textContent = 'Bitte waehle einen Track aus der Liste oder Karte.';
+            }
+
+            if (trackMarriageMeta) {
+                trackMarriageMeta.innerHTML = `
+                    <dt>Status</dt>
+                    <dd>Bitte waehle einen Track aus.</dd>
+                `;
+            }
+
+            if (trackMarriageHelper) {
+                trackMarriageHelper.textContent = 'Nur heiratsfaehige Tracks koennen bestaetigt werden.';
+            }
+
+            if (trackMarriageOpenConfirmButton) {
+                trackMarriageOpenConfirmButton.disabled = true;
+                trackMarriageOpenConfirmButton.textContent = 'Zuweisung pruefen';
+            }
+
+            return;
+        }
+
+        const eligible = trackIsEligible(selectedTrack);
+        const canSubmit = eligible && hasTrackMarriageDraftUid() && !state.trackMarriageSubmitting;
+        const safetySummary = [
+            selectedTrack.state || '-',
+            selectedTrack.motion_state || '-',
+            selectedTrack.identity_state || 'unknown',
+        ].join(' / ');
+
+        if (trackMarriageStatus) {
+            trackMarriageStatus.textContent = eligible ? 'Bereit' : 'Gesperrt';
+            trackMarriageStatus.classList.toggle('status-pill--ok', eligible);
+            trackMarriageStatus.classList.toggle('status-pill--warn', !eligible);
+        }
+
+        if (trackMarriageSummary) {
+            trackMarriageSummary.textContent = eligible
+                ? `UID-Entwurf fuer Track T${selectedTrack.track_id}. Die Speicherung passiert erst nach der Bestaetigung.`
+                : `Track T${selectedTrack.track_id} ist derzeit nicht verheiratbar.`;
+        }
+
+        if (trackMarriageMeta) {
+            trackMarriageMeta.innerHTML = [
+                ['Track', `T${selectedTrack.track_id}`],
+                ['Marriage State', selectedTrack.marriage_state || 'unknown'],
+                ['Eligibility', eligible ? 'eligible' : 'blocked'],
+                ['Grund', humanizeEligibilityReason(selectedTrack.eligibility_reason)],
+                ['Blocker', formatEligibilityBlockers(selectedTrack)],
+                ['Zone', selectedTrack.zone_label || '-'],
+                ['Position', selectedTrack.position_label || '-'],
+                ['Safety', safetySummary],
+            ]
+                .map(([label, value]) => `<dt>${label}</dt><dd>${escapeHtml(value)}</dd>`)
+                .join('');
+        }
+
+        if (trackMarriageHelper) {
+            trackMarriageHelper.textContent = eligible
+                ? 'Track ist auswählbar. Scan oder Eingabe fuellt nur den Entwurf; gespeichert wird erst nach Bestätigung.'
+                : formatEligibilityBlockers(selectedTrack);
+        }
+
+        if (trackMarriageOpenConfirmButton) {
+            trackMarriageOpenConfirmButton.disabled = !canSubmit;
+            trackMarriageOpenConfirmButton.textContent = state.trackMarriageSubmitting
+                ? 'Zuweisung wird gesendet ...'
+                : 'Zuweisung pruefen';
+        }
+    }
+
+    function renderTrackMarriageDialog() {
+        const selectedTrack = findSelectedTrack();
+        const normalizedUid = String(state.trackMarriageDraftUid ?? '').trim();
+
+        if (!trackMarriageDialog) {
+            return;
+        }
+
+        trackMarriageDialog.hidden = !state.trackMarriageConfirmOpen;
+
+        if (!state.trackMarriageConfirmOpen || !selectedTrack) {
+            return;
+        }
+
+        if (trackMarriageDialogSummary) {
+            trackMarriageDialogSummary.textContent = `UID ${normalizedUid} mit Track T${selectedTrack.track_id} verbinden?`;
+        }
+
+        if (trackMarriageDialogDetail) {
+            trackMarriageDialogDetail.innerHTML = [
+                ['UID', normalizedUid],
+                ['Track', `T${selectedTrack.track_id}`],
+                ['Zone', selectedTrack.zone_label || '-'],
+                ['Position', selectedTrack.position_label || '-'],
+                ['Status', selectedTrack.state || '-'],
+                ['Motion', selectedTrack.motion_state || '-'],
+                ['Identity', selectedTrack.identity_state || 'unknown'],
+                ['Marriage State', selectedTrack.marriage_state || 'unknown'],
+            ]
+                .map(([label, value]) => `<dt>${label}</dt><dd>${escapeHtml(value)}</dd>`)
+                .join('');
+        }
+
+        if (trackMarriageConfirmButton) {
+            trackMarriageConfirmButton.disabled = state.trackMarriageSubmitting;
+            trackMarriageConfirmButton.textContent = state.trackMarriageSubmitting
+                ? 'Zuweisung wird gesendet ...'
+                : 'Jetzt zuordnen';
+        }
+    }
+
     function render() {
         renderMeta();
         renderDashboardScreens();
@@ -1206,6 +1606,8 @@ function renderNextMatchingUids(matchingUids) {
         renderTrackList();
         renderSections();
         renderDetails();
+        renderTrackMarriagePanel();
+        renderTrackMarriageDialog();
     }
 
     syncMapBackgroundCache();
