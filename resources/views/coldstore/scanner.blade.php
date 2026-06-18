@@ -7,6 +7,11 @@
         class="coldstore-page coldstore-page--narrow"
         data-coldstore-scanner
         data-barcode-endpoint="{{ $barcodeEndpoint }}"
+        data-track-marriage-endpoint="{{ $trackMarriageEndpoint }}"
+        data-scanner-mode="{{ $marriageContext['mode'] ?? 'scan' }}"
+        @if($marriageContext)
+            data-track-id="{{ $marriageContext['track_id'] }}"
+        @endif
     >
         <section class="hero-banner">
             <div class="hero-banner__content">
@@ -27,6 +32,29 @@
         </section>
 
         <section class="panel-grid panel-grid--single">
+            @if ($marriageContext)
+                <article class="panel-card">
+                    <div class="panel-card__header">
+                        <div>
+                            <p class="panel-card__eyebrow">UID Zuweisung</p>
+                            <h2 class="panel-card__title">Ausgewaehlter Track</h2>
+                        </div>
+                        <span class="status-pill status-pill--ok">Modus: UID zuweisen</span>
+                    </div>
+                    <dl class="detail-grid">
+                        <dt>Track</dt>
+                        <dd>{{ $marriageContext['track_label'] }}</dd>
+                        <dt>Track ID</dt>
+                        <dd>{{ $marriageContext['track_id'] }}</dd>
+                        <dt>Zone</dt>
+                        <dd>{{ $marriageContext['zone_label'] }}</dd>
+                        <dt>Position</dt>
+                        <dd>{{ $marriageContext['position_label'] }}</dd>
+                    </dl>
+                    <a class="track-marriage-button-secondary" href="{{ $marriageContext['overview_url'] }}">Zurueck zur Overview</a>
+                </article>
+            @endif
+
             <article class="panel-card">
                 <div class="panel-card__header">
                     <div>
@@ -74,7 +102,9 @@
                             <option value="exit" @selected($scanDirection === 'exit')>exit</option>
                         </select>
                     </label>
-                    <button class="hero-banner__button hero-banner__button--full" type="submit">An anderen PC senden</button>
+                    <button class="hero-banner__button hero-banner__button--full" type="submit">
+                        {{ $marriageContext ? 'UID dem Track zuordnen' : 'An anderen PC senden' }}
+                    </button>
                 </form>
                 <p class="panel-card__muted" data-scan-status>Bereit für den nächsten manuellen Scan.</p>
             </article>
@@ -107,6 +137,7 @@
             'remoteConfigured' => $remoteConfigured,
             'scannerId' => $scannerId,
             'scanDirection' => $scanDirection,
+            'marriageContext' => $marriageContext,
         ]) !!};
     </script>
 @endsection

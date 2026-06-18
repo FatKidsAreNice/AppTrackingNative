@@ -157,12 +157,24 @@ it('uses a jobs view state that replaces the overview with the selected detail v
         ->toContain("const mapElement = root.querySelector('[data-coldstore-overview-map]');")
         ->toContain('data-coldstore-track-id="${track.track_id}"')
         ->toContain('data-coldstore-track-uid="${escapeHtml(track.barcode_id || \'\')}"')
-        ->toContain("trackMarriageDraftUid: ''")
-        ->toContain('trackMarriageEndpoint')
-        ->toContain('function renderTrackMarriagePanel()')
-        ->toContain('function renderTrackMarriageDialog()')
-        ->toContain('function submitTrackMarriage()')
-        ->toContain('data-track-marriage-dialog')
+        ->toContain("const TRACK_UID_PRESENCE_STORAGE_KEY = 'coldstore-track-uid-presence';")
+        ->toContain("const TRACK_MARRIAGE_CONTEXT_STORAGE_KEY = 'coldstore-track-marriage-context';")
+        ->toContain("const TRACK_OVERVIEW_FEEDBACK_STORAGE_KEY = 'coldstore-overview-feedback';")
+        ->toContain('function readTrackUidPresence()')
+        ->toContain('function writePendingMarriageContext(value)')
+        ->toContain('function writeOverviewFeedback(value)')
+        ->toContain('function adoptPendingMarriageContext()')
+        ->toContain('persistedTrackUidPresence[barcodeId] = currentSeenAt;')
+        ->toContain('state.trackSessionSeenAt[String(matchingTrack.track_id)] = seenAt;')
+        ->toContain('scannerRoute')
+        ->toContain('function navigateToScannerForMarriage(track)')
+        ->toContain('seen_at: state.trackSessionSeenAt[String(track.track_id)] ?? Date.now()')
+        ->toContain("targetUrl.searchParams.set('mode', 'marriage');")
+        ->toContain('window.location.assign(targetUrl.toString())')
+        ->toContain('const pendingOverviewFeedback = readOverviewFeedback();')
+        ->toContain('state.overviewHighlightMessage = pendingOverviewFeedback;')
+        ->toContain('writeOverviewFeedback(scanStatus.textContent);')
+        ->toContain('window.location.assign(marriageContext.overview_url);')
         ->toContain('track-row--${tone}')
         ->toContain('track-node--${trackStatusTone(track)}')
         ->toContain('humanizeEligibilityReason(selectedTrack.eligibility_reason)')
@@ -193,7 +205,6 @@ it('uses a jobs view state that replaces the overview with the selected detail v
         ->toContain('.track-row--blocked')
         ->toContain('.track-node--highlighted')
         ->toContain('.track-node--assigned')
-        ->toContain('.track-marriage-modal')
         ->toContain('.track-marriage-button-secondary')
         ->toContain('.track-node--pulse')
         ->toContain('@keyframes coldstore-track-pulse')
@@ -203,14 +214,11 @@ it('uses a jobs view state that replaces the overview with the selected detail v
         ->toContain('data-coldstore-overview-map')
         ->toContain('data-jobs-panel')
         ->toContain('data-jobs-line-selector')
-        ->toContain('data-track-marriage-endpoint')
-        ->toContain('data-track-marriage-form')
-        ->toContain('data-track-marriage-feedback')
-        ->toContain('data-track-marriage-dialog')
+        ->toContain('data-scanner-route')
         ->not->toContain('data-job-detail-panel hidden');
 });
 
-it('renders the track marriage workflow hooks on the dashboard', function () {
+it('does not render the old inline track marriage module on the dashboard', function () {
     Config::set('coldstore.remote.base_url', null);
     Config::set('coldstore.jobs.data_source', 'local');
     Config::set('coldstore.jobs.production_orders.source', 'mock');
@@ -218,13 +226,13 @@ it('renders the track marriage workflow hooks on the dashboard', function () {
     $response = $this->get(route('coldstore.dashboard'));
 
     $response->assertSuccessful()
-        ->assertSee('UID Hochzeit')
-        ->assertSee('Track zuweisen')
-        ->assertSee('data-track-marriage-form', false)
-        ->assertSee('data-track-marriage-uid-input', false)
-        ->assertSee('data-track-marriage-feedback', false)
-        ->assertSee('data-track-marriage-dialog', false)
-        ->assertSee('data-track-marriage-confirm', false);
+        ->assertSee('data-scanner-route', false)
+        ->assertDontSee('UID Hochzeit')
+        ->assertDontSee('Track Status')
+        ->assertDontSee('data-track-marriage-feedback', false)
+        ->assertDontSee('data-track-marriage-form', false)
+        ->assertDontSee('data-track-marriage-dialog', false)
+        ->assertDontSee('UID Scan / Eingabe');
 });
 
 it('renders demo overview tracks with stable uid to track assignments for overview highlighting', function () {
@@ -282,7 +290,29 @@ it('renders the scanner module', function () {
     $response->assertSuccessful()
         ->assertSee('Barcode Modul')
         ->assertSee('Scanner ID')
-        ->assertSee('Richtung');
+        ->assertSee('Richtung')
+        ->assertSee('data-track-marriage-endpoint', false);
+});
+
+it('renders marriage context on the scanner page when a track is selected from overview', function () {
+    Config::set('coldstore.remote.base_url', 'http://coldstore.test');
+
+    $response = $this->get(route('coldstore.scanner', [
+        'mode' => 'marriage',
+        'track_id' => 1,
+        'track_label' => 'T1',
+        'zone_label' => 'Reihe 4',
+        'position_label' => 'x=-1.05 y=1.15',
+    ]));
+
+    $response->assertSuccessful()
+        ->assertSee('Ausgewaehlter Track')
+        ->assertSee('Modus: UID zuweisen')
+        ->assertSee('T1')
+        ->assertSee('Reihe 4')
+        ->assertSee('x=-1.05 y=1.15')
+        ->assertSee('UID dem Track zuordnen')
+        ->assertSee('data-track-marriage-endpoint', false);
 });
 
 it('renders the settings page', function () {

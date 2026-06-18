@@ -1,6 +1,9 @@
 import { Camera, Events, Off, On } from '#nativephp';
 
 const CABINET_SCRAP_RATE = 0.10;
+const TRACK_UID_PRESENCE_STORAGE_KEY = 'coldstore-track-uid-presence';
+const TRACK_MARRIAGE_CONTEXT_STORAGE_KEY = 'coldstore-track-marriage-context';
+const TRACK_OVERVIEW_FEEDBACK_STORAGE_KEY = 'coldstore-overview-feedback';
 
 const csrfToken = document
     .querySelector('meta[name="csrf-token"]')
@@ -11,6 +14,56 @@ document.addEventListener('DOMContentLoaded', () => {
     bootDashboard();
     bootScanner();
 });
+
+function readStorageJson(key, fallbackValue) {
+    try {
+        const rawValue = window.localStorage.getItem(key);
+
+        if (!rawValue) {
+            return fallbackValue;
+        }
+
+        return JSON.parse(rawValue);
+    } catch {
+        return fallbackValue;
+    }
+}
+
+function writeStorageJson(key, value) {
+    window.localStorage.setItem(key, JSON.stringify(value));
+}
+
+function readTrackUidPresence() {
+    return readStorageJson(TRACK_UID_PRESENCE_STORAGE_KEY, {});
+}
+
+function writeTrackUidPresence(value) {
+    writeStorageJson(TRACK_UID_PRESENCE_STORAGE_KEY, value);
+}
+
+function readPendingMarriageContext() {
+    return readStorageJson(TRACK_MARRIAGE_CONTEXT_STORAGE_KEY, null);
+}
+
+function writePendingMarriageContext(value) {
+    writeStorageJson(TRACK_MARRIAGE_CONTEXT_STORAGE_KEY, value);
+}
+
+function clearPendingMarriageContext() {
+    window.localStorage.removeItem(TRACK_MARRIAGE_CONTEXT_STORAGE_KEY);
+}
+
+function readOverviewFeedback() {
+    return readStorageJson(TRACK_OVERVIEW_FEEDBACK_STORAGE_KEY, null);
+}
+
+function writeOverviewFeedback(value) {
+    writeStorageJson(TRACK_OVERVIEW_FEEDBACK_STORAGE_KEY, value);
+}
+
+function clearOverviewFeedback() {
+    window.localStorage.removeItem(TRACK_OVERVIEW_FEEDBACK_STORAGE_KEY);
+}
 
 function bootColdstoreTouchGuards() {
     if (!document.body?.classList.contains('coldstore-body')) {
@@ -46,7 +99,7 @@ function bootDashboard() {
     }
 
     const overviewEndpoint = root.dataset.overviewEndpoint;
-    const trackMarriageEndpoint = root.dataset.trackMarriageEndpoint;
+    const scannerRoute = root.dataset.scannerRoute;
     const pollInterval = Number(root.dataset.pollInterval ?? '5000');
     const initialOverview = window.coldstoreDashboardConfig ?? {};
     const initialJobs = window.coldstoreDashboardInitialJobs ?? {};
@@ -55,6 +108,8 @@ function bootDashboard() {
         baseUrl: null,
         jobsPath: '/api/coldstore/jobs',
     };
+    const persistedTrackUidPresence = readTrackUidPresence();
+    const pendingOverviewFeedback = readOverviewFeedback();
     const initialFrameId = initialOverview.meta?.frame_id ?? 'coldstore-map';
     const state = {
         overview: initialOverview,
@@ -70,10 +125,6 @@ function bootDashboard() {
         highlightedTrackId: null,
         highlightedTrackUid: null,
         overviewHighlightMessage: null,
-        trackMarriageDraftUid: '',
-        trackMarriageFeedback: null,
-        trackMarriageSubmitting: false,
-        trackMarriageConfirmOpen: false,
         trackSessionSeenAt: {},
         mapBackgroundCache: {
             [initialFrameId]: {
@@ -82,6 +133,11 @@ function bootDashboard() {
             },
         },
     };
+
+    if (typeof pendingOverviewFeedback === 'string' && pendingOverviewFeedback.trim() !== '') {
+        state.overviewHighlightMessage = pendingOverviewFeedback;
+        clearOverviewFeedback();
+    }
 
     const jobOrder = root.querySelector('[data-job-order]');
     const selectedLineLabel = root.querySelector('[data-selected-line-label]');
@@ -104,43 +160,11 @@ function bootDashboard() {
     const detailTitle = root.querySelector('[data-detail-title]');
     const filterInput = root.querySelector('[data-track-filter]');
     const refreshButton = root.querySelector('[data-refresh-overview]');
-    const trackMarriageForm = root.querySelector('[data-track-marriage-form]');
-    const trackMarriageStatus = root.querySelector('[data-track-marriage-status]');
-    const trackMarriageSummary = root.querySelector('[data-track-marriage-summary]');
-    const trackMarriageFeedback = root.querySelector('[data-track-marriage-feedback]');
-    const trackMarriageUidInput = root.querySelector('[data-track-marriage-uid-input]');
-    const trackMarriageMeta = root.querySelector('[data-track-marriage-meta]');
-    const trackMarriageHelper = root.querySelector('[data-track-marriage-helper]');
-    const trackMarriageOpenConfirmButton = root.querySelector('[data-track-marriage-open-confirm]');
-    const trackMarriageDialog = root.querySelector('[data-track-marriage-dialog]');
-    const trackMarriageDialogSummary = root.querySelector('[data-track-marriage-dialog-summary]');
-    const trackMarriageDialogDetail = root.querySelector('[data-track-marriage-dialog-detail]');
-    const trackMarriageConfirmButton = root.querySelector('[data-track-marriage-confirm]');
     const rootStyles = window.getComputedStyle(document.documentElement);
 
     filterInput?.addEventListener('input', (event) => {
         state.filter = event.target.value.toLowerCase();
         render();
-    });
-
-    trackMarriageUidInput?.addEventListener('input', (event) => {
-        state.trackMarriageDraftUid = event.target.value;
-        renderTrackMarriagePanel();
-    });
-
-    trackMarriageForm?.addEventListener('submit', (event) => {
-        event.preventDefault();
-        openTrackMarriageConfirm();
-    });
-
-    trackMarriageDialog?.querySelectorAll('[data-track-marriage-cancel]').forEach((button) => {
-        button.addEventListener('click', () => {
-            closeTrackMarriageConfirm();
-        });
-    });
-
-    trackMarriageConfirmButton?.addEventListener('click', async () => {
-        await submitTrackMarriage();
     });
 
     refreshButton?.addEventListener('click', async () => {
@@ -160,10 +184,6 @@ function bootDashboard() {
     });
 
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && state.trackMarriageConfirmOpen) {
-            closeTrackMarriageConfirm();
-        }
-
         if (event.key === 'Escape') {
             setLinePickerOpen(false);
         }
@@ -267,13 +287,24 @@ function bootDashboard() {
     }
 
     function syncTrackSessionSeenAt() {
-        const visibleTrackIds = new Set(
-            (state.overview.tracks ?? []).map((track) => String(track.track_id)),
-        );
+        const tracks = state.overview.tracks ?? [];
+        const visibleTrackIds = new Set(tracks.map((track) => String(track.track_id)));
 
-        visibleTrackIds.forEach((trackId) => {
+        tracks.forEach((track) => {
+            const trackId = String(track.track_id);
+            const barcodeId = String(track.barcode_id ?? '').trim();
+            const persistedSeenAt = barcodeId !== '' ? Number(persistedTrackUidPresence[barcodeId] ?? 0) : 0;
+
             if (!state.trackSessionSeenAt[trackId]) {
-                state.trackSessionSeenAt[trackId] = Date.now();
+                state.trackSessionSeenAt[trackId] = persistedSeenAt > 0 ? persistedSeenAt : Date.now();
+            }
+
+            if (barcodeId !== '') {
+                const currentSeenAt = state.trackSessionSeenAt[trackId];
+
+                if (!persistedTrackUidPresence[barcodeId] || Number(persistedTrackUidPresence[barcodeId]) > currentSeenAt) {
+                    persistedTrackUidPresence[barcodeId] = currentSeenAt;
+                }
             }
         });
 
@@ -282,6 +313,36 @@ function bootDashboard() {
                 delete state.trackSessionSeenAt[trackId];
             }
         });
+
+        writeTrackUidPresence(persistedTrackUidPresence);
+    }
+
+    function adoptPendingMarriageContext() {
+        const pendingMarriageContext = readPendingMarriageContext();
+
+        if (!pendingMarriageContext?.track_id || !pendingMarriageContext?.seen_at) {
+            return;
+        }
+
+        const matchingTrack = (state.overview.tracks ?? []).find((track) => {
+            return track.track_id === Number(pendingMarriageContext.track_id)
+                && String(track.barcode_id ?? '').trim() !== '';
+        });
+
+        if (!matchingTrack) {
+            return;
+        }
+
+        const barcodeId = String(matchingTrack.barcode_id ?? '').trim();
+        const seenAt = Number(pendingMarriageContext.seen_at);
+
+        if (barcodeId !== '' && Number.isFinite(seenAt) && seenAt > 0) {
+            persistedTrackUidPresence[barcodeId] = seenAt;
+            state.trackSessionSeenAt[String(matchingTrack.track_id)] = seenAt;
+            writeTrackUidPresence(persistedTrackUidPresence);
+        }
+
+        clearPendingMarriageContext();
     }
 
     function syncMapBackgroundCache() {
@@ -331,6 +392,7 @@ function bootDashboard() {
             state.overview = await response.json();
             syncMapBackgroundCache();
             syncTrackSessionSeenAt();
+            adoptPendingMarriageContext();
 
             if (!findSelectedTrack()) {
                 state.selectedTrackId = state.overview.overview?.selected_track_id ?? state.overview.tracks?.[0]?.track_id ?? null;
@@ -344,10 +406,6 @@ function bootDashboard() {
                 if (!highlightedTrack && state.overviewHighlightMessage === null) {
                     state.overviewHighlightMessage = `Schrank fuer UID ${state.highlightedTrackUid} in der Overview nicht gefunden.`;
                 }
-            }
-
-            if (!trackIsEligible(findSelectedTrack())) {
-                state.trackMarriageConfirmOpen = false;
             }
 
             render();
@@ -434,13 +492,35 @@ function bootDashboard() {
         state.highlightedTrackId = Number(trackId);
         state.highlightedTrackUid = highlightedUid ? String(highlightedUid) : null;
         state.overviewHighlightMessage = null;
-        state.trackMarriageConfirmOpen = false;
+        const selectedTrack = findSelectedTrack();
 
-        if (trackIsEligible(findSelectedTrack())) {
-            requestAnimationFrame(() => {
-                trackMarriageUidInput?.focus();
-            });
+        if (trackIsEligible(selectedTrack)) {
+            navigateToScannerForMarriage(selectedTrack);
+
+            return;
         }
+    }
+
+    function navigateToScannerForMarriage(track) {
+        if (!track || !scannerRoute) {
+            return;
+        }
+
+        writePendingMarriageContext({
+            track_id: Number(track.track_id),
+            seen_at: state.trackSessionSeenAt[String(track.track_id)] ?? Date.now(),
+            saved_at: Date.now(),
+        });
+
+        const targetUrl = new URL(scannerRoute, window.location.origin);
+
+        targetUrl.searchParams.set('mode', 'marriage');
+        targetUrl.searchParams.set('track_id', String(track.track_id));
+        targetUrl.searchParams.set('track_label', String(track.display_id ?? `T${track.track_id}`));
+        targetUrl.searchParams.set('zone_label', String(track.zone_label ?? 'Unbekannte Zone'));
+        targetUrl.searchParams.set('position_label', String(track.position_label ?? '-'));
+
+        window.location.assign(targetUrl.toString());
     }
 
     function openOverviewForUid(uid) {
@@ -551,10 +631,6 @@ function bootDashboard() {
         return Boolean(track?.is_marriage_eligible);
     }
 
-    function hasTrackMarriageDraftUid() {
-        return String(state.trackMarriageDraftUid ?? '').trim() !== '';
-    }
-
     function trackStatusTone(track) {
         if (track?.marriage_state === 'assigned' || String(track?.barcode_id ?? '').trim() !== '') {
             return 'assigned';
@@ -647,96 +723,6 @@ function bootDashboard() {
         }
 
         return numericValue.toFixed(2);
-    }
-
-    function setTrackMarriageFeedback(type, message) {
-        state.trackMarriageFeedback = {
-            type,
-            message,
-        };
-    }
-
-    function clearTrackMarriageFeedback() {
-        state.trackMarriageFeedback = null;
-    }
-
-    function closeTrackMarriageConfirm() {
-        state.trackMarriageConfirmOpen = false;
-        renderTrackMarriageDialog();
-    }
-
-    function openTrackMarriageConfirm() {
-        const selectedTrack = findSelectedTrack();
-
-        if (!selectedTrack) {
-            setTrackMarriageFeedback('warn', 'Bitte waehle zuerst einen Track aus.');
-            renderTrackMarriagePanel();
-
-            return;
-        }
-
-        if (!trackIsEligible(selectedTrack)) {
-            setTrackMarriageFeedback('warn', formatEligibilityBlockers(selectedTrack));
-            renderTrackMarriagePanel();
-
-            return;
-        }
-
-        if (!hasTrackMarriageDraftUid()) {
-            setTrackMarriageFeedback('warn', 'Bitte scanne oder erfasse zuerst eine UID.');
-            renderTrackMarriagePanel();
-
-            return;
-        }
-
-        clearTrackMarriageFeedback();
-        state.trackMarriageConfirmOpen = true;
-        renderTrackMarriageDialog();
-    }
-
-    async function submitTrackMarriage() {
-        const selectedTrack = findSelectedTrack();
-        const normalizedUid = String(state.trackMarriageDraftUid ?? '').trim();
-
-        if (!selectedTrack || !trackIsEligible(selectedTrack) || normalizedUid === '') {
-            openTrackMarriageConfirm();
-
-            return;
-        }
-
-        state.trackMarriageSubmitting = true;
-        renderTrackMarriagePanel();
-        renderTrackMarriageDialog();
-
-        try {
-            const response = await fetch(trackMarriageEndpoint, {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                },
-                body: JSON.stringify({
-                    track_id: selectedTrack.track_id,
-                    uid: normalizedUid,
-                }),
-            });
-            const json = await response.json();
-
-            if (!response.ok) {
-                throw new Error(json.message ?? json.reason ?? 'UID-Zuordnung fehlgeschlagen.');
-            }
-
-            setTrackMarriageFeedback('ok', json.message ?? `UID ${normalizedUid} wurde Track T${selectedTrack.track_id} zugeordnet.`);
-            state.trackMarriageDraftUid = '';
-            state.trackMarriageConfirmOpen = false;
-            await refreshOverview();
-        } catch (error) {
-            setTrackMarriageFeedback('warn', error.message ?? 'UID-Zuordnung fehlgeschlagen.');
-        } finally {
-            state.trackMarriageSubmitting = false;
-            render();
-        }
     }
 
     function renderLinePicker() {
@@ -1447,154 +1433,6 @@ function renderNextMatchingUids(matchingUids) {
         }
     }
 
-    function renderTrackMarriageFeedback() {
-        if (!trackMarriageFeedback) {
-            return;
-        }
-
-        if (!state.trackMarriageFeedback?.message) {
-            trackMarriageFeedback.hidden = true;
-            trackMarriageFeedback.textContent = '';
-            trackMarriageFeedback.classList.remove('callout--ok', 'callout--warn');
-
-            return;
-        }
-
-        trackMarriageFeedback.hidden = false;
-        trackMarriageFeedback.textContent = state.trackMarriageFeedback.message;
-        trackMarriageFeedback.classList.toggle('callout--ok', state.trackMarriageFeedback.type === 'ok');
-        trackMarriageFeedback.classList.toggle('callout--warn', state.trackMarriageFeedback.type !== 'ok');
-    }
-
-    function renderTrackMarriagePanel() {
-        const selectedTrack = findSelectedTrack();
-
-        if (trackMarriageUidInput && trackMarriageUidInput.value !== state.trackMarriageDraftUid) {
-            trackMarriageUidInput.value = state.trackMarriageDraftUid;
-        }
-
-        renderTrackMarriageFeedback();
-
-        if (!selectedTrack) {
-            if (trackMarriageStatus) {
-                trackMarriageStatus.textContent = 'Warten auf Auswahl';
-                trackMarriageStatus.classList.add('status-pill--warn');
-                trackMarriageStatus.classList.remove('status-pill--ok');
-            }
-
-            if (trackMarriageSummary) {
-                trackMarriageSummary.textContent = 'Bitte waehle einen Track aus der Liste oder Karte.';
-            }
-
-            if (trackMarriageMeta) {
-                trackMarriageMeta.innerHTML = `
-                    <dt>Status</dt>
-                    <dd>Bitte waehle einen Track aus.</dd>
-                `;
-            }
-
-            if (trackMarriageHelper) {
-                trackMarriageHelper.textContent = 'Nur heiratsfaehige Tracks koennen bestaetigt werden.';
-            }
-
-            if (trackMarriageOpenConfirmButton) {
-                trackMarriageOpenConfirmButton.disabled = true;
-                trackMarriageOpenConfirmButton.textContent = 'Zuweisung pruefen';
-            }
-
-            return;
-        }
-
-        const eligible = trackIsEligible(selectedTrack);
-        const canSubmit = eligible && hasTrackMarriageDraftUid() && !state.trackMarriageSubmitting;
-        const safetySummary = [
-            selectedTrack.state || '-',
-            selectedTrack.motion_state || '-',
-            selectedTrack.identity_state || 'unknown',
-        ].join(' / ');
-
-        if (trackMarriageStatus) {
-            trackMarriageStatus.textContent = eligible ? 'Bereit' : 'Gesperrt';
-            trackMarriageStatus.classList.toggle('status-pill--ok', eligible);
-            trackMarriageStatus.classList.toggle('status-pill--warn', !eligible);
-        }
-
-        if (trackMarriageSummary) {
-            trackMarriageSummary.textContent = eligible
-                ? `UID-Entwurf fuer Track T${selectedTrack.track_id}. Die Speicherung passiert erst nach der Bestaetigung.`
-                : `Track T${selectedTrack.track_id} ist derzeit nicht verheiratbar.`;
-        }
-
-        if (trackMarriageMeta) {
-            trackMarriageMeta.innerHTML = [
-                ['Track', `T${selectedTrack.track_id}`],
-                ['Marriage State', selectedTrack.marriage_state || 'unknown'],
-                ['Eligibility', eligible ? 'eligible' : 'blocked'],
-                ['Grund', humanizeEligibilityReason(selectedTrack.eligibility_reason)],
-                ['Blocker', formatEligibilityBlockers(selectedTrack)],
-                ['Zone', selectedTrack.zone_label || '-'],
-                ['Position', selectedTrack.position_label || '-'],
-                ['Safety', safetySummary],
-            ]
-                .map(([label, value]) => `<dt>${label}</dt><dd>${escapeHtml(value)}</dd>`)
-                .join('');
-        }
-
-        if (trackMarriageHelper) {
-            trackMarriageHelper.textContent = eligible
-                ? 'Track ist auswählbar. Scan oder Eingabe fuellt nur den Entwurf; gespeichert wird erst nach Bestätigung.'
-                : formatEligibilityBlockers(selectedTrack);
-        }
-
-        if (trackMarriageOpenConfirmButton) {
-            trackMarriageOpenConfirmButton.disabled = !canSubmit;
-            trackMarriageOpenConfirmButton.textContent = state.trackMarriageSubmitting
-                ? 'Zuweisung wird gesendet ...'
-                : 'Zuweisung pruefen';
-        }
-    }
-
-    function renderTrackMarriageDialog() {
-        const selectedTrack = findSelectedTrack();
-        const normalizedUid = String(state.trackMarriageDraftUid ?? '').trim();
-
-        if (!trackMarriageDialog) {
-            return;
-        }
-
-        trackMarriageDialog.hidden = !state.trackMarriageConfirmOpen;
-
-        if (!state.trackMarriageConfirmOpen || !selectedTrack) {
-            return;
-        }
-
-        if (trackMarriageDialogSummary) {
-            trackMarriageDialogSummary.textContent = `UID ${normalizedUid} mit Track T${selectedTrack.track_id} verbinden?`;
-        }
-
-        if (trackMarriageDialogDetail) {
-            trackMarriageDialogDetail.innerHTML = [
-                ['UID', normalizedUid],
-                ['Track', `T${selectedTrack.track_id}`],
-                ['Zone', selectedTrack.zone_label || '-'],
-                ['Position', selectedTrack.position_label || '-'],
-                ['Status', selectedTrack.state || '-'],
-                ['Motion', selectedTrack.motion_state || '-'],
-                ['Identity', selectedTrack.identity_state || 'unknown'],
-                ['Marriage State', selectedTrack.marriage_state || 'unknown'],
-            ]
-                .map(([label, value]) => `<dt>${label}</dt><dd>${escapeHtml(value)}</dd>`)
-                .join('');
-        }
-
-        if (trackMarriageConfirmButton) {
-            trackMarriageConfirmButton.disabled = state.trackMarriageSubmitting;
-            trackMarriageConfirmButton.textContent = state.trackMarriageSubmitting
-                ? 'Zuweisung wird gesendet ...'
-                : 'Jetzt zuordnen';
-        }
-    }
-
     function render() {
         renderMeta();
         renderDashboardScreens();
@@ -1606,8 +1444,6 @@ function renderNextMatchingUids(matchingUids) {
         renderTrackList();
         renderSections();
         renderDetails();
-        renderTrackMarriagePanel();
-        renderTrackMarriageDialog();
     }
 
     syncMapBackgroundCache();
@@ -1634,6 +1470,7 @@ function bootScanner() {
     }
 
     const barcodeEndpoint = root.dataset.barcodeEndpoint;
+    const trackMarriageEndpoint = root.dataset.trackMarriageEndpoint;
     const form = root.querySelector('[data-barcode-form]');
     const barcodeInput = root.querySelector('[data-barcode-input]');
     const scannerIdInput = root.querySelector('[data-scanner-id-input]');
@@ -1647,6 +1484,8 @@ function bootScanner() {
     const cameraPreviewImage = root.querySelector('[data-camera-preview-image]');
     const cameraPath = root.querySelector('[data-camera-path]');
     const historyKey = 'coldstore-scan-history';
+    const marriageContext = window.coldstoreScannerConfig?.marriageContext ?? null;
+    const persistedTrackUidPresence = readTrackUidPresence();
 
     const state = {
         history: JSON.parse(window.localStorage.getItem(historyKey) ?? '[]'),
@@ -1663,7 +1502,7 @@ function bootScanner() {
                     <article class="track-row">
                         <span>
                             <strong>${entry.barcode_id}</strong>
-                            <small>${entry.direction} · ${new Date(entry.scanned_at).toLocaleString('de-DE')}</small>
+                            <small>${entry.direction} · ${entry.track_id ? `Track T${entry.track_id} · ` : ''}${new Date(entry.scanned_at).toLocaleString('de-DE')}</small>
                         </span>
                         <span>
                             <strong>${entry.status}</strong>
@@ -1686,6 +1525,8 @@ function bootScanner() {
             ['Barcode', entry.barcode_id],
             ['Scanner', entry.scanner_id],
             ['Richtung', entry.direction],
+            ['Modus', entry.mode ?? 'scan'],
+            ['Track', entry.track_id ? `T${entry.track_id}` : '-'],
             ['Zeit', new Date(entry.scanned_at).toLocaleString('de-DE')],
             ['Status', entry.status],
             ['Antwort', entry.remote_message ?? '-'],
@@ -1713,43 +1554,75 @@ function bootScanner() {
     };
 
     const sendBarcode = async (payload) => {
-        scanStatus.textContent = 'Sende Barcode an den anderen PC ...';
+        const isMarriageMode = payload.mode === 'marriage' && Number(payload.track_id) > 0;
+        const requestUrl = isMarriageMode ? trackMarriageEndpoint : barcodeEndpoint;
+        const requestBody = isMarriageMode
+            ? {
+                track_id: Number(payload.track_id),
+                uid: payload.barcode_id,
+            }
+            : payload;
+
+        scanStatus.textContent = isMarriageMode
+            ? 'Ordne UID dem ausgewaehlten Track zu ...'
+            : 'Sende Barcode an den anderen PC ...';
 
         try {
-            const response = await fetch(barcodeEndpoint, {
+            const response = await fetch(requestUrl, {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken,
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(requestBody),
             });
 
             const json = await response.json();
 
             if (!response.ok) {
-                throw new Error(json.message ?? 'Barcode konnte nicht gesendet werden.');
+                throw new Error(json.message ?? (isMarriageMode ? 'UID konnte nicht zugeordnet werden.' : 'Barcode konnte nicht gesendet werden.'));
             }
 
             const entry = {
-                barcode_id: json.scan.barcode_id,
-                scanner_id: json.scan.scanner_id,
-                direction: json.scan.direction,
-                scanned_at: json.scan.scanned_at,
+                barcode_id: json.scan?.barcode_id ?? json.uid ?? payload.barcode_id,
+                scanner_id: json.scan?.scanner_id ?? payload.scanner_id,
+                direction: json.scan?.direction ?? payload.direction,
+                scanned_at: json.scan?.scanned_at ?? payload.scanned_at,
                 status: 'gesendet',
+                track_id: json.scan?.track_id ?? json.track_id ?? payload.track_id ?? null,
+                mode: json.scan?.mode ?? (isMarriageMode ? 'marriage' : (payload.mode ?? 'scan')),
                 remote_message: json.remote_response?.message ?? json.message,
             };
+
+            if (isMarriageMode && entry.barcode_id) {
+                const pendingMarriageContext = readPendingMarriageContext();
+                const seenAt = Number(pendingMarriageContext?.seen_at ?? Date.now());
+
+                if (Number.isFinite(seenAt) && seenAt > 0) {
+                    persistedTrackUidPresence[entry.barcode_id] = seenAt;
+                    writeTrackUidPresence(persistedTrackUidPresence);
+                }
+
+                clearPendingMarriageContext();
+            }
 
             state.history.unshift(entry);
             persistHistory();
             renderHistory();
             renderLastScan(entry);
 
-            scanStatus.textContent = json.message;
+            scanStatus.textContent = json.message ?? (isMarriageMode
+                ? `UID ${entry.barcode_id} wurde Track T${entry.track_id} zugeordnet.`
+                : 'Barcode erfolgreich an den anderen PC gesendet.');
             form.reset();
             scannerIdInput.value = window.coldstoreScannerConfig?.scannerId ?? 'coldstore-entry-01';
             directionInput.value = window.coldstoreScannerConfig?.scanDirection ?? 'entry';
+
+            if (isMarriageMode && marriageContext?.overview_url) {
+                writeOverviewFeedback(scanStatus.textContent);
+                window.location.assign(marriageContext.overview_url);
+            }
         } catch (error) {
             const failedEntry = {
                 barcode_id: payload.barcode_id,
@@ -1757,6 +1630,8 @@ function bootScanner() {
                 direction: payload.direction,
                 scanned_at: payload.scanned_at,
                 status: 'fehler',
+                track_id: payload.track_id ?? null,
+                mode: payload.mode ?? 'scan',
                 remote_message: error.message,
             };
 
@@ -1820,6 +1695,10 @@ function bootScanner() {
             scanner_id: scannerIdInput.value.trim() || window.coldstoreScannerConfig?.scannerId || 'coldstore-entry-01',
             direction: directionInput.value || window.coldstoreScannerConfig?.scanDirection || 'entry',
             scanned_at: new Date().toISOString(),
+            ...(marriageContext?.mode === 'marriage' && marriageContext?.track_id ? {
+                mode: 'marriage',
+                track_id: Number(marriageContext.track_id),
+            } : {}),
         });
     });
 

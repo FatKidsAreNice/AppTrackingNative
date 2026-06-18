@@ -55,6 +55,11 @@ class ColdstoreApiService
             'source' => 'nativephp-mobile',
         ];
 
+        if (($payload['mode'] ?? null) === 'marriage') {
+            $scan['mode'] = 'marriage';
+            $scan['track_id'] = (int) $payload['track_id'];
+        }
+
         try {
             $response = $this->requestJson('POST', (string) config('coldstore.remote.barcode_path'), $scan);
         } catch (Throwable $throwable) {

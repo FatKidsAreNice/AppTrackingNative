@@ -42,7 +42,7 @@ class ColdstoreDashboardController extends Controller
             'jobLines' => $this->lineWorkplaceMapper->all(),
             'jobsApi' => $jobsApi,
             'pollIntervalMs' => config('coldstore.poll_interval_seconds') * 1000,
-            'trackMarriageEndpoint' => route('api.coldstore.track-marriages.store', absolute: false),
+            'scannerRoute' => route('coldstore.scanner', absolute: false),
         ]);
     }
 
@@ -89,13 +89,28 @@ class ColdstoreDashboardController extends Controller
 
     public function scanner(Request $request): View
     {
+        $trackId = $request->integer('track_id');
+        $scannerMode = $request->query('mode') === 'marriage' && $trackId > 0 ? 'marriage' : 'scan';
+        $marriageContext = $scannerMode === 'marriage'
+            ? [
+                'mode' => 'marriage',
+                'track_id' => $trackId,
+                'track_label' => (string) $request->query('track_label', 'T'.$trackId),
+                'zone_label' => (string) $request->query('zone_label', 'Unbekannte Zone'),
+                'position_label' => (string) $request->query('position_label', '-'),
+                'overview_url' => route('coldstore.dashboard', absolute: false),
+            ]
+            : null;
+
         return view('coldstore.scanner', [
             'appSurface' => $this->coldstoreAppSurfaceResolver->resolve($request),
             'barcodeEndpoint' => route('api.coldstore.barcodes.store', absolute: false),
+            'trackMarriageEndpoint' => route('api.coldstore.track-marriages.store', absolute: false),
             'cameraPluginInstalled' => InstalledVersions::isInstalled('nativephp/mobile-camera'),
             'remoteConfigured' => filled(config('coldstore.remote.base_url')),
             'scannerId' => config('coldstore.scanner.id'),
             'scanDirection' => config('coldstore.scanner.direction'),
+            'marriageContext' => $marriageContext,
         ]);
     }
 

@@ -37,6 +37,36 @@ it('forwards a barcode scan to the remote pc', function () {
     });
 });
 
+it('forwards a marriage scan with the selected track context', function () {
+    Config::set('coldstore.remote.base_url', 'http://coldstore.test');
+    Config::set('coldstore.remote.barcode_path', '/barcode-scan');
+    Http::fake([
+        'http://coldstore.test/barcode-scan' => Http::response([
+            'accepted' => true,
+            'message' => 'Marriage scan accepted.',
+        ], 200),
+    ]);
+
+    $response = $this->postJson(route('api.coldstore.barcodes.store'), [
+        'barcode_id' => '32171700',
+        'scanner_id' => 'coldstore-entry-01',
+        'direction' => 'entry',
+        'mode' => 'marriage',
+        'track_id' => 1,
+    ]);
+
+    $response->assertCreated()
+        ->assertJsonPath('scan.mode', 'marriage')
+        ->assertJsonPath('scan.track_id', 1);
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'http://coldstore.test/barcode-scan'
+            && $request['mode'] === 'marriage'
+            && $request['track_id'] === 1
+            && $request['barcode_id'] === '32171700';
+    });
+});
+
 it('returns a service error when no remote endpoint is configured', function () {
     Config::set('coldstore.remote.base_url', null);
 
@@ -62,4 +92,18 @@ it('validates barcode payloads', function () {
 
     $response->assertStatus(422)
         ->assertJsonValidationErrors(['barcode_id', 'scanner_id', 'direction', 'scanned_at']);
+});
+
+it('requires a track id in marriage mode', function () {
+    Config::set('coldstore.remote.base_url', 'http://coldstore.test');
+
+    $response = $this->postJson(route('api.coldstore.barcodes.store'), [
+        'barcode_id' => '32171700',
+        'scanner_id' => 'coldstore-entry-01',
+        'direction' => 'entry',
+        'mode' => 'marriage',
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['track_id']);
 });

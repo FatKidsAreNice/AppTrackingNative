@@ -8,7 +8,7 @@
         data-coldstore-dashboard
         data-poll-interval="{{ $pollIntervalMs }}"
         data-overview-endpoint="{{ route('api.coldstore.overview', absolute: false) }}"
-        data-track-marriage-endpoint="{{ $trackMarriageEndpoint }}"
+        data-scanner-route="{{ $scannerRoute }}"
     >
         <section class="dashboard-screen" data-dashboard-screen="overview">
             <section class="stats-grid">
@@ -68,48 +68,6 @@
                         </div>
                     </div>
                     <dl class="detail-grid" data-track-detail></dl>
-                </article>
-
-                <article class="panel-card">
-                    <div class="panel-card__header">
-                        <div>
-                            <p class="panel-card__eyebrow">UID Hochzeit</p>
-                            <h2 class="panel-card__title">Track zuweisen</h2>
-                        </div>
-                        <span class="status-pill status-pill--warn" data-track-marriage-status>Warten auf Auswahl</span>
-                    </div>
-                    <p class="panel-card__description" data-track-marriage-summary>
-                        Bitte waehle einen Track aus der Liste oder Karte.
-                    </p>
-                    <div class="callout callout--warn" data-track-marriage-feedback hidden></div>
-                    <form class="track-marriage-form" data-track-marriage-form>
-                        <div class="field">
-                            <label class="field__label" for="track-marriage-uid">UID Scan / Eingabe</label>
-                            <input
-                                id="track-marriage-uid"
-                                class="panel-input"
-                                type="text"
-                                inputmode="text"
-                                autocomplete="off"
-                                placeholder="UID scannen oder eingeben"
-                                data-track-marriage-uid-input
-                            >
-                        </div>
-                        <div class="track-marriage-panel" data-track-marriage-panel>
-                            <dl class="detail-grid detail-grid--compact" data-track-marriage-meta>
-                                <dt>Status</dt>
-                                <dd>Bitte waehle einen Track aus.</dd>
-                            </dl>
-                            <div class="track-marriage-actions">
-                                <button class="hero-banner__button hero-banner__button--full" type="submit" data-track-marriage-open-confirm>
-                                    Zuweisung pruefen
-                                </button>
-                                <p class="panel-card__muted" data-track-marriage-helper>
-                                    Nur heiratsfaehige Tracks koennen bestaetigt werden.
-                                </p>
-                            </div>
-                        </div>
-                    </form>
                 </article>
 
                 <article class="panel-card panel-card--wide">
@@ -218,28 +176,6 @@
                 Aufträge
             </button>
         </nav>
-
-        <section class="track-marriage-modal" data-track-marriage-dialog hidden>
-            <div class="track-marriage-modal__backdrop" data-track-marriage-cancel></div>
-            <div class="track-marriage-modal__card" role="dialog" aria-modal="true" aria-labelledby="track-marriage-dialog-title">
-                <div class="panel-card__header">
-                    <div>
-                        <p class="panel-card__eyebrow">Bestaetigung</p>
-                        <h2 class="panel-card__title" id="track-marriage-dialog-title">UID mit Track verbinden?</h2>
-                    </div>
-                </div>
-                <p class="panel-card__description" data-track-marriage-dialog-summary></p>
-                <dl class="detail-grid detail-grid--compact" data-track-marriage-dialog-detail></dl>
-                <div class="track-marriage-actions">
-                    <button class="hero-banner__button hero-banner__button--full" type="button" data-track-marriage-confirm>
-                        Jetzt zuordnen
-                    </button>
-                    <button class="track-marriage-button-secondary" type="button" data-track-marriage-cancel>
-                        Abbrechen
-                    </button>
-                </div>
-            </div>
-        </section>
     </div>
 
     <script>
