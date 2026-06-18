@@ -1,0 +1,48 @@
+# findTrackByUid
+
+## Ort
+- Datei: `resources/js/coldstore-app.js`
+- Klasse/Modul: `coldstore-app.js`
+- Signatur: `findTrackByUid(uid)`
+
+## Kurzbeschreibung
+Ermittelt einen Track anhand seiner UID.
+
+## Zweck im System
+Stellt den passenden Ausschnitt des aktuellen Frontend-States bereit.
+
+## Ablaufplan
+1. Durchsucht den verfügbaren State oder die übergebenen Daten.
+2. Vergleicht nach dem gewünschten Kriterium.
+3. Gibt den Treffer oder einen leeren Wert zurück.
+
+## Eingaben
+- `uid`
+- `state`: aktueller Frontend-Zustand der Seite
+
+## Ausgaben
+- UI-/State-Effekt: aktualisiert DOM, Frontend-State oder Browser-Navigation.
+
+## Verwendete Abhängigkeiten
+- Keine direkten Abhängigkeiten statisch erkannt.
+
+## Fachliche Regeln
+Keine besonderen fachlichen Regeln.
+
+## Fehlerfälle / Fallbacks
+- Arbeitet mit Fallback-Werten für fehlende oder `null`-Daten.
+- Gibt bei fehlenden oder nicht verwertbaren Daten bewusst `null` zurück.
+
+## Relevanz für Erweiterungen
+- Anpassen, wenn sich der konkrete Ablauf oder das Datenmodell dieser Funktion ändert.
+- Anpassen, wenn sich Dashboard-State, Scanner-Navigation oder Frontend-Rendering in diesem Teilfluss ändern.
+
+## Nicht zuständig für
+- Nicht zuständig für SQL-Zugriffe oder die finale Remote-Persistenz.
+
+## Abhängige Tests
+- `tests/Feature/ColdstoreDashboardTest.php`
+
+## Einschätzung
+- vorsichtig ändern
+- Frontend-State, Rendering und Navigation greifen hier oft eng ineinander.

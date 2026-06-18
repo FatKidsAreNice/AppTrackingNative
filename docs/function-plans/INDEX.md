@@ -1,0 +1,231 @@
+# INDEX
+
+Diese Übersicht gruppiert die dokumentierten Produktionsfunktionen und -methoden nach Systembereichen. Routen und Konfigurationen sind als Kontextanker aufgeführt, ohne dafür künstliche Funktionsdateien zu erzeugen.
+
+## Kontextanker
+- `routes/web.php`: Dashboard-, Scanner-, Settings- sowie Coldstore-API-Routen
+- `config/coldstore.php`: Remote-Endpunkte, Jobs-Modus, Polling und Scanner-Konfiguration
+- `config/database.php`: SQL-Server-Verbindungsbasis für die vorbereiteten Repositories
+
+## Coldstore Jobs
+- Datei: `app/Services/ColdstoreJobs/EtikInterfaceLookupRepository.php`
+  - [lookupByUid](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/EtikInterfaceLookupRepository/EtikInterfaceLookupRepository/lookup-by-uid.md) - `lookupByUid(string $uid): ?array`
+  - [productNameForRequiredPeText1](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/EtikInterfaceLookupRepository/EtikInterfaceLookupRepository/product-name-for-required-pe-text1.md) - `productNameForRequiredPeText1(string $requiredPeText1): ?string`
+  - [productNameLookupSql](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/EtikInterfaceLookupRepository/EtikInterfaceLookupRepository/product-name-lookup-sql.md) - `productNameLookupSql(): string`
+  - [connection](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/EtikInterfaceLookupRepository/EtikInterfaceLookupRepository/connection.md) - `connection(): ConnectionInterface`
+  - [fetchProductNameRow](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/EtikInterfaceLookupRepository/EtikInterfaceLookupRepository/fetch-product-name-row.md) - `fetchProductNameRow(string $requiredPeText1): mixed`
+- Datei: `app/Services/ColdstoreJobs/JobMatchingService.php`
+  - [__construct](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/JobMatchingService/JobMatchingService/__construct.md) - `__construct( private LineWorkplaceMapper $lineWorkplaceMapper, private ProductionOrderRepository $productionOrderRepository, private ColdstoreInventoryRepository $coldstoreInventoryRepository, private EtikInterfaceLookupRepository $etikInterfaceLookupRepository, )`
+  - [payloadForLine](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/JobMatchingService/JobMatchingService/payload-for-line.md) - `payloadForLine(int $selectedLine): array`
+  - [normalizeOrder](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/JobMatchingService/JobMatchingService/normalize-order.md) - `normalizeOrder(array $order): array`
+  - [requiredPeText1ForFuellArtNr](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/JobMatchingService/JobMatchingService/required-pe-text1-for-fuell-art-nr.md) - `requiredPeText1ForFuellArtNr(string $matstammFuellArtNr): string`
+  - [matchingInventory](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/JobMatchingService/JobMatchingService/matching-inventory.md) - `matchingInventory(string $requiredPeText1): array`
+  - [cabinetContentMatchesRequiredPeText1](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/JobMatchingService/JobMatchingService/cabinet-content-matches-required-pe-text1.md) - `cabinetContentMatchesRequiredPeText1(string $requiredPeText1, ?array $cabinetContent): bool`
+  - [sourceMode](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/JobMatchingService/JobMatchingService/source-mode.md) - `sourceMode(): string`
+- Datei: `app/Services/ColdstoreJobs/LineWorkplaceMapper.php`
+  - [all](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/LineWorkplaceMapper/LineWorkplaceMapper/all.md) - `all(): array`
+  - [lines](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/LineWorkplaceMapper/LineWorkplaceMapper/lines.md) - `lines(): array`
+  - [defaultLine](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/LineWorkplaceMapper/LineWorkplaceMapper/default-line.md) - `defaultLine(): int`
+  - [supportsLine](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/LineWorkplaceMapper/LineWorkplaceMapper/supports-line.md) - `supportsLine(int $line): bool`
+  - [workplaceNumberForLine](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/LineWorkplaceMapper/LineWorkplaceMapper/workplace-number-for-line.md) - `workplaceNumberForLine(int $line): int`
+  - [labelForLine](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/LineWorkplaceMapper/LineWorkplaceMapper/label-for-line.md) - `labelForLine(int $line): string`
+  - [mapping](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/LineWorkplaceMapper/LineWorkplaceMapper/mapping.md) - `mapping(): array`
+
+## Config / Support
+- Datei: `app/Http/Controllers/Api/ColdstoreJobsController.php`
+  - [__invoke](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Controllers/Api/ColdstoreJobsController/ColdstoreJobsController/__invoke.md) - `__invoke(ShowColdstoreJobsRequest $request, JobMatchingService $jobMatchingService): JsonResponse`
+- Datei: `app/Http/Requests/ShowColdstoreJobsRequest.php`
+  - [prepareForValidation](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Requests/ShowColdstoreJobsRequest/ShowColdstoreJobsRequest/prepare-for-validation.md) - `prepareForValidation(): void`
+  - [authorize](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Requests/ShowColdstoreJobsRequest/ShowColdstoreJobsRequest/authorize.md) - `authorize(): bool`
+  - [rules](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Requests/ShowColdstoreJobsRequest/ShowColdstoreJobsRequest/rules.md) - `rules(): array`
+  - [messages](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Requests/ShowColdstoreJobsRequest/ShowColdstoreJobsRequest/messages.md) - `messages(): array`
+- Datei: `app/Models/User.php`
+  - [casts](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Models/User/User/casts.md) - `casts(): array`
+- Datei: `app/Providers/AppServiceProvider.php`
+  - [register](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Providers/AppServiceProvider/AppServiceProvider/register.md) - `register(): void`
+  - [boot](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Providers/AppServiceProvider/AppServiceProvider/boot.md) - `boot(): void`
+- Datei: `app/Providers/NativeServiceProvider.php`
+  - [register](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Providers/NativeServiceProvider/NativeServiceProvider/register.md) - `register(): void`
+  - [boot](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Providers/NativeServiceProvider/NativeServiceProvider/boot.md) - `boot(): void`
+  - [plugins](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Providers/NativeServiceProvider/NativeServiceProvider/plugins.md) - `plugins(): array`
+- Datei: `app/Services/ColdstoreJobRepository.php`
+  - [all](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobRepository/ColdstoreJobRepository/all.md) - `all(): array`
+- Datei: `app/Support/ColdstoreAppSurfaceResolver.php`
+  - [resolve](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Support/ColdstoreAppSurfaceResolver/ColdstoreAppSurfaceResolver/resolve.md) - `resolve(Request $request): string`
+  - [isNativePhpRequest](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Support/ColdstoreAppSurfaceResolver/ColdstoreAppSurfaceResolver/is-native-php-request.md) - `isNativePhpRequest(Request $request): bool`
+  - [normalizeSurface](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Support/ColdstoreAppSurfaceResolver/ColdstoreAppSurfaceResolver/normalize-surface.md) - `normalizeSurface(mixed $surface): ?string`
+- Datei: `app/Support/SqlServerConnectionConfig.php`
+  - [normalizeEncryptOption](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Support/SqlServerConnectionConfig/SqlServerConnectionConfig/normalize-encrypt-option.md) - `normalizeEncryptOption(mixed $value, string $default = 'yes'): string`
+  - [normalizeCharset](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Support/SqlServerConnectionConfig/SqlServerConnectionConfig/normalize-charset.md) - `normalizeCharset(?string $value, string $default = 'UTF-8'): string`
+
+## Dashboard UI
+- Datei: `resources/js/coldstore-app.js`
+  - [readStorageJson](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/read-storage-json.md) - `readStorageJson(key, fallbackValue)`
+  - [writeStorageJson](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/write-storage-json.md) - `writeStorageJson(key, value)`
+  - [readTrackUidPresence](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/read-track-uid-presence.md) - `readTrackUidPresence()`
+  - [writeTrackUidPresence](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/write-track-uid-presence.md) - `writeTrackUidPresence(value)`
+  - [readPendingMarriageContext](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/read-pending-marriage-context.md) - `readPendingMarriageContext()`
+  - [writePendingMarriageContext](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/write-pending-marriage-context.md) - `writePendingMarriageContext(value)`
+  - [clearPendingMarriageContext](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/clear-pending-marriage-context.md) - `clearPendingMarriageContext()`
+  - [readOverviewFeedback](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/read-overview-feedback.md) - `readOverviewFeedback()`
+  - [writeOverviewFeedback](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/write-overview-feedback.md) - `writeOverviewFeedback(value)`
+  - [clearOverviewFeedback](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/clear-overview-feedback.md) - `clearOverviewFeedback()`
+  - [bootColdstoreTouchGuards](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/boot-coldstore-touch-guards.md) - `bootColdstoreTouchGuards()`
+  - [bootDashboard](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/boot-dashboard.md) - `bootDashboard()`
+  - [setLinePickerOpen](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/set-line-picker-open.md) - `setLinePickerOpen(isOpen)`
+  - [renderJobsLineSelector](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-jobs-line-selector.md) - `renderJobsLineSelector()`
+  - [renderDashboardScreens](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-dashboard-screens.md) - `renderDashboardScreens()`
+  - [activeFrameId](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/active-frame-id.md) - `activeFrameId(overview = state.overview)`
+  - [selectedLineOption](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/selected-line-option.md) - `selectedLineOption()`
+  - [jobsWorkplaceNumberForLine](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/jobs-workplace-number-for-line.md) - `jobsWorkplaceNumberForLine(selectedLine)`
+  - [buildJobsUrl](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/build-jobs-url.md) - `buildJobsUrl(selectedLine)`
+  - [buildLoadingJobsPayload](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/build-loading-jobs-payload.md) - `buildLoadingJobsPayload(selectedLine)`
+  - [buildEmptyJobsPayload](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/build-empty-jobs-payload.md) - `buildEmptyJobsPayload(selectedLine)`
+  - [syncTrackSessionSeenAt](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/sync-track-session-seen-at.md) - `syncTrackSessionSeenAt()`
+  - [adoptPendingMarriageContext](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/adopt-pending-marriage-context.md) - `adoptPendingMarriageContext()`
+  - [syncMapBackgroundCache](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/sync-map-background-cache.md) - `syncMapBackgroundCache()`
+  - [refreshOverview](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/refresh-overview.md) - `refreshOverview()`
+  - [refreshJobs](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/refresh-jobs.md) - `refreshJobs(selectedLine)`
+  - [getFilteredTracks](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/get-filtered-tracks.md) - `getFilteredTracks()`
+  - [findSelectedTrack](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/find-selected-track.md) - `findSelectedTrack()`
+  - [findTrackByUid](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/find-track-by-uid.md) - `findTrackByUid(uid)`
+  - [selectTrack](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/select-track.md) - `selectTrack(trackId, highlightedUid = null)`
+  - [navigateToScannerForMarriage](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/navigate-to-scanner-for-marriage.md) - `navigateToScannerForMarriage(track)`
+  - [openOverviewForUid](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/open-overview-for-uid.md) - `openOverviewForUid(uid)`
+  - [mapPoint](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/map-point.md) - `mapPoint(x, y)`
+  - [formatTrackerStamp](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/format-tracker-stamp.md) - `formatTrackerStamp(seconds)`
+  - [formatLastSeenTime](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/format-last-seen-time.md) - `formatLastSeenTime(trackStampSeconds)`
+  - [formatDuration](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/format-duration.md) - `formatDuration(durationMs)`
+  - [trackIsEligible](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/track-is-eligible.md) - `trackIsEligible(track)`
+  - [trackStatusTone](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/track-status-tone.md) - `trackStatusTone(track)`
+  - [trackColor](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/track-color.md) - `trackColor(track)`
+  - [trackStatusLabel](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/track-status-label.md) - `trackStatusLabel(track)`
+  - [humanizeEligibilityReason](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/humanize-eligibility-reason.md) - `humanizeEligibilityReason(reason)`
+  - [formatEligibilityBlockers](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/format-eligibility-blockers.md) - `formatEligibilityBlockers(track)`
+  - [formatIdentityConfidence](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/format-identity-confidence.md) - `formatIdentityConfidence(value)`
+  - [renderLinePicker](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-line-picker.md) - `renderLinePicker()`
+  - [renderJobOrder](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-job-order.md) - `renderJobOrder()`
+  - [renderOrderSection](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-order-section.md) - `renderOrderSection(order, label, matchingUids = null)`
+  - [escapeHtml](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/escape-html.md) - `escapeHtml(value)`
+  - [formatRequiredPeText1](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/format-required-pe-text1.md) - `formatRequiredPeText1(value)`
+  - [formatOrderQuantity](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/format-order-quantity.md) - `formatOrderQuantity(quantity)`
+  - [formatCabinetWeight](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/format-cabinet-weight.md) - `formatCabinetWeight(weightKg)`
+  - [numericWeight](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/numeric-weight.md) - `numericWeight(weightKg)`
+  - [buildCabinetWeightBreakdown](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/build-cabinet-weight-breakdown.md) - `buildCabinetWeightBreakdown(netWeightKg, orderWeightKg)`
+  - [renderNextMatchingUids](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-next-matching-uids.md) - `renderNextMatchingUids(matchingUids)`
+  - [renderNoNextOrder](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-no-next-order.md) - `renderNoNextOrder()`
+  - [renderJobStatus](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-job-status.md) - `renderJobStatus()`
+  - [renderJobs](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-jobs.md) - `renderJobs()`
+  - [renderJobOverview](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-job-overview.md) - `renderJobOverview()`
+  - [renderJobDetailPanel](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-job-detail-panel.md) - `renderJobDetailPanel(detail)`
+  - [bindJobOrderActions](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/bind-job-order-actions.md) - `bindJobOrderActions()`
+  - [resetJobOrderView](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/reset-job-order-view.md) - `resetJobOrderView()`
+  - [scrollJobsDetailIntoView](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/scroll-jobs-detail-into-view.md) - `scrollJobsDetailIntoView()`
+  - [activeJobDetailPayload](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/active-job-detail-payload.md) - `activeJobDetailPayload()`
+  - [jobProductName](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/job-product-name.md) - `jobProductName(order)`
+  - [renderMatchingUids](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-matching-uids.md) - `renderMatchingUids(matchingUids, orderWeightKg = null)`
+  - [renderMap](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-map.md) - `renderMap()`
+  - [renderTrackList](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-track-list.md) - `renderTrackList()`
+  - [renderSections](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-sections.md) - `renderSections()`
+  - [renderDetails](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-details.md) - `renderDetails()`
+  - [renderMeta](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-meta.md) - `renderMeta()`
+  - [render](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render.md) - `render()`
+  - [bootScanner](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/boot-scanner.md) - `bootScanner()`
+  - [persistHistory](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/persist-history.md) - `persistHistory()`
+  - [renderHistory](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-history.md) - `renderHistory()`
+  - [renderLastScan](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/render-last-scan.md) - `renderLastScan(entry = null)`
+  - [updateCameraPreview](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/update-camera-preview.md) - `updateCameraPreview(path = null)`
+  - [sendBarcode](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/send-barcode.md) - `sendBarcode(payload)`
+  - [handlePhotoTaken](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/handle-photo-taken.md) - `handlePhotoTaken(payload)`
+  - [handlePhotoCancelled](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/handle-photo-cancelled.md) - `handlePhotoCancelled()`
+  - [handleCameraPermissionDenied](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/resources/js/coldstore-app/coldstore-app.js/handle-camera-permission-denied.md) - `handleCameraPermissionDenied()`
+
+## Inventory / Cabinet Content
+- Datei: `app/Services/ColdstoreJobs/ColdstoreInventoryRepository.php`
+  - [allCurrent](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/ColdstoreInventoryRepository/ColdstoreInventoryRepository/all-current.md) - `allCurrent(): array`
+  - [findCurrentContentByUid](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/ColdstoreInventoryRepository/ColdstoreInventoryRepository/find-current-content-by-uid.md) - `findCurrentContentByUid(string $uid): ?array`
+  - [sourceMode](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/ColdstoreInventoryRepository/ColdstoreInventoryRepository/source-mode.md) - `sourceMode(): string`
+- Datei: `app/Services/ColdstoreJobs/MockColdstoreInventoryRepository.php`
+  - [allCurrent](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/MockColdstoreInventoryRepository/MockColdstoreInventoryRepository/all-current.md) - `allCurrent(): array`
+  - [findCurrentContentByUid](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/MockColdstoreInventoryRepository/MockColdstoreInventoryRepository/find-current-content-by-uid.md) - `findCurrentContentByUid(string $uid): ?array`
+  - [demoUidForTrack](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/MockColdstoreInventoryRepository/MockColdstoreInventoryRepository/demo-uid-for-track.md) - `demoUidForTrack(int $trackId, string $fallbackUid): string`
+  - [sourceMode](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/MockColdstoreInventoryRepository/MockColdstoreInventoryRepository/source-mode.md) - `sourceMode(): string`
+- Datei: `app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository.php`
+  - [__construct](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository/SqlServerColdstoreInventoryRepository/__construct.md) - `__construct(private ?string $connectionName = null)`
+  - [driverAvailable](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository/SqlServerColdstoreInventoryRepository/driver-available.md) - `driverAvailable(): bool`
+  - [allCurrent](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository/SqlServerColdstoreInventoryRepository/all-current.md) - `allCurrent(): array`
+  - [findCurrentContentByUid](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository/SqlServerColdstoreInventoryRepository/find-current-content-by-uid.md) - `findCurrentContentByUid(string $uid): ?array`
+  - [sourceMode](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository/SqlServerColdstoreInventoryRepository/source-mode.md) - `sourceMode(): string`
+  - [sql](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository/SqlServerColdstoreInventoryRepository/sql.md) - `sql(): string`
+  - [mapContentRow](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository/SqlServerColdstoreInventoryRepository/map-content-row.md) - `mapContentRow(stdClass $row): array`
+  - [connection](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository/SqlServerColdstoreInventoryRepository/connection.md) - `connection(): ConnectionInterface`
+  - [fallbackRepository](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository/SqlServerColdstoreInventoryRepository/fallback-repository.md) - `fallbackRepository(): ColdstoreInventoryRepository`
+  - [fetchContentRow](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository/SqlServerColdstoreInventoryRepository/fetch-content-row.md) - `fetchContentRow(string $uid): mixed`
+  - [shouldFallbackToMock](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository/SqlServerColdstoreInventoryRepository/should-fallback-to-mock.md) - `shouldFallbackToMock(Throwable $throwable): bool`
+  - [nullableTrim](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerColdstoreInventoryRepository/SqlServerColdstoreInventoryRepository/nullable-trim.md) - `nullableTrim(mixed $value): ?string`
+
+## Overview / Tracks
+- Datei: `app/Http/Controllers/Api/ColdstoreOverviewController.php`
+  - [__invoke](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Controllers/Api/ColdstoreOverviewController/ColdstoreOverviewController/__invoke.md) - `__invoke(ColdstoreApiService $coldstoreApiService): JsonResponse`
+- Datei: `app/Http/Controllers/ColdstoreDashboardController.php`
+  - [__construct](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Controllers/ColdstoreDashboardController/ColdstoreDashboardController/__construct.md) - `__construct( private ColdstoreApiService $coldstoreApiService, private ColdstoreJobRepository $coldstoreJobRepository, private JobMatchingService $jobMatchingService, private LineWorkplaceMapper $lineWorkplaceMapper, private ColdstoreAppSurfaceResolver $coldstoreAppSurfaceResolver, )`
+  - [index](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Controllers/ColdstoreDashboardController/ColdstoreDashboardController/index.md) - `index(Request $request): View`
+  - [remoteApiInitialJobsPayload](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Controllers/ColdstoreDashboardController/ColdstoreDashboardController/remote-api-initial-jobs-payload.md) - `remoteApiInitialJobsPayload(int $defaultLine): array`
+  - [normalizedJobsRemoteApiBaseUrl](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Controllers/ColdstoreDashboardController/ColdstoreDashboardController/normalized-jobs-remote-api-base-url.md) - `normalizedJobsRemoteApiBaseUrl(): ?string`
+  - [scanner](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Controllers/ColdstoreDashboardController/ColdstoreDashboardController/scanner.md) - `scanner(Request $request): View`
+  - [settings](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Controllers/ColdstoreDashboardController/ColdstoreDashboardController/settings.md) - `settings(Request $request): View`
+- Datei: `app/Services/ColdstoreApiService.php`
+  - [fetchOverview](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/fetch-overview.md) - `fetchOverview(): array`
+  - [forwardBarcode](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/forward-barcode.md) - `forwardBarcode(array $payload): array`
+  - [assignTrackMarriage](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/assign-track-marriage.md) - `assignTrackMarriage(array $payload): array`
+  - [hasRemoteBaseUrl](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/has-remote-base-url.md) - `hasRemoteBaseUrl(): bool`
+  - [normalizeOverview](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/normalize-overview.md) - `normalizeOverview(array $payload, string $sourceMode): array`
+  - [normalizeTrack](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/normalize-track.md) - `normalizeTrack(array $track, string $lookupMode): array`
+  - [normalizeRack](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/normalize-rack.md) - `normalizeRack(array $rack): array`
+  - [normalizeSections](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/normalize-sections.md) - `normalizeSections(array $sections, array $highlightedRacks): array`
+  - [statusText](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/status-text.md) - `statusText(string $sourceMode, ?float $syncDelta): string`
+  - [remoteLabel](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/remote-label.md) - `remoteLabel(): string`
+  - [requestJson](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/request-json.md) - `requestJson(string $method, string $path, array $payload = []): array`
+  - [client](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/client.md) - `client(): PendingRequest`
+  - [sampleOverview](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/sample-overview.md) - `sampleOverview(): array`
+  - [decodeRemoteJsonResponse](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreApiService/ColdstoreApiService/decode-remote-json-response.md) - `decodeRemoteJsonResponse(Response $response): array`
+
+## Production Orders
+- Datei: `app/Services/ColdstoreJobs/MockProductionOrderRepository.php`
+  - [nextOpenOrderForWorkplace](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/MockProductionOrderRepository/MockProductionOrderRepository/next-open-order-for-workplace.md) - `nextOpenOrderForWorkplace(int $workplaceNumber): ?array`
+  - [openOrdersForWorkplace](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/MockProductionOrderRepository/MockProductionOrderRepository/open-orders-for-workplace.md) - `openOrdersForWorkplace(int $workplaceNumber, int $limit = 2): array`
+  - [sourceMode](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/MockProductionOrderRepository/MockProductionOrderRepository/source-mode.md) - `sourceMode(): string`
+  - [orders](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/MockProductionOrderRepository/MockProductionOrderRepository/orders.md) - `orders(): array`
+- Datei: `app/Services/ColdstoreJobs/ProductionOrderRepository.php`
+  - [nextOpenOrderForWorkplace](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/ProductionOrderRepository/ProductionOrderRepository/next-open-order-for-workplace.md) - `nextOpenOrderForWorkplace(int $workplaceNumber): ?array`
+  - [openOrdersForWorkplace](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/ProductionOrderRepository/ProductionOrderRepository/open-orders-for-workplace.md) - `openOrdersForWorkplace(int $workplaceNumber, int $limit = 2): array`
+  - [sourceMode](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/ProductionOrderRepository/ProductionOrderRepository/source-mode.md) - `sourceMode(): string`
+- Datei: `app/Services/ColdstoreJobs/SqlServerProductionOrderRepository.php`
+  - [__construct](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/__construct.md) - `__construct(private ?string $connectionName = null)`
+  - [driverAvailable](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/driver-available.md) - `driverAvailable(): bool`
+  - [nextOpenOrderForWorkplace](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/next-open-order-for-workplace.md) - `nextOpenOrderForWorkplace(int $workplaceNumber): ?array`
+  - [openOrdersForWorkplace](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/open-orders-for-workplace.md) - `openOrdersForWorkplace(int $workplaceNumber, int $limit = 2): array`
+  - [sourceMode](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/source-mode.md) - `sourceMode(): string`
+  - [sql](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/sql.md) - `sql(): string`
+  - [mapRow](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/map-row.md) - `mapRow(stdClass $row): array`
+  - [requiredPeText1FromFuellArtNr](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/required-pe-text1-from-fuell-art-nr.md) - `requiredPeText1FromFuellArtNr(string $matstammFuellArtNr): string`
+  - [connection](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/connection.md) - `connection(): ConnectionInterface`
+  - [fallbackRepository](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/fallback-repository.md) - `fallbackRepository(): ProductionOrderRepository`
+  - [fetchRows](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/fetch-rows.md) - `fetchRows(int $workplaceNumber, int $limit = 2): array`
+  - [shouldFallbackToMock](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/should-fallback-to-mock.md) - `shouldFallbackToMock(Throwable $throwable): bool`
+  - [nullableTrim](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Services/ColdstoreJobs/SqlServerProductionOrderRepository/SqlServerProductionOrderRepository/nullable-trim.md) - `nullableTrim(mixed $value): ?string`
+
+## Scanner / Barcode
+- Datei: `app/Http/Controllers/Api/BarcodeScanController.php`
+  - [__invoke](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Controllers/Api/BarcodeScanController/BarcodeScanController/__invoke.md) - `__invoke(StoreBarcodeScanRequest $request, ColdstoreApiService $coldstoreApiService): JsonResponse`
+- Datei: `app/Http/Controllers/Api/TrackMarriageController.php`
+  - [__invoke](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Controllers/Api/TrackMarriageController/TrackMarriageController/__invoke.md) - `__invoke(StoreTrackMarriageRequest $request, ColdstoreApiService $coldstoreApiService): JsonResponse`
+- Datei: `app/Http/Requests/StoreBarcodeScanRequest.php`
+  - [authorize](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Requests/StoreBarcodeScanRequest/StoreBarcodeScanRequest/authorize.md) - `authorize(): bool`
+  - [rules](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Requests/StoreBarcodeScanRequest/StoreBarcodeScanRequest/rules.md) - `rules(): array`
+  - [messages](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Requests/StoreBarcodeScanRequest/StoreBarcodeScanRequest/messages.md) - `messages(): array`
+- Datei: `app/Http/Requests/StoreTrackMarriageRequest.php`
+  - [authorize](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Requests/StoreTrackMarriageRequest/StoreTrackMarriageRequest/authorize.md) - `authorize(): bool`
+  - [rules](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Requests/StoreTrackMarriageRequest/StoreTrackMarriageRequest/rules.md) - `rules(): array`
+  - [messages](/C:/Users/Julke/PhpstormProjects/AppTrackingNative/docs/function-plans/app/Http/Requests/StoreTrackMarriageRequest/StoreTrackMarriageRequest/messages.md) - `messages(): array`
+
