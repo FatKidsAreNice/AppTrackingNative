@@ -1,6 +1,6 @@
 import { Camera, Events, Off, On } from '#nativephp';
 
-const CABINET_SCRAP_RATE = 0.10;
+const DEFAULT_CABINET_SCRAP_PERCENT = 10;
 const TRACK_UID_PRESENCE_STORAGE_KEY = 'coldstore-track-uid-presence';
 const TRACK_MARRIAGE_CONTEXT_STORAGE_KEY = 'coldstore-track-marriage-context';
 const TRACK_OVERVIEW_FEEDBACK_STORAGE_KEY = 'coldstore-overview-feedback';
@@ -868,6 +868,20 @@ function bootDashboard() {
         })} kg`;
     }
 
+    function formatPercent(percentValue) {
+        if (percentValue === null || percentValue === undefined || Number.isNaN(Number(percentValue))) {
+            return `${DEFAULT_CABINET_SCRAP_PERCENT.toLocaleString('de-DE', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })} %`;
+        }
+
+        return `${Number(percentValue).toLocaleString('de-DE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        })} %`;
+    }
+
     function numericWeight(weightKg) {
         if (weightKg === null || weightKg === undefined) {
             return null;
@@ -878,20 +892,34 @@ function bootDashboard() {
         return Number.isFinite(parsedWeight) ? parsedWeight : null;
     }
 
-    function buildCabinetWeightBreakdown(netWeightKg, orderWeightKg) {
+    function normalizeScrapPercent(scrapPercent) {
+        if (scrapPercent === null || scrapPercent === undefined) {
+            return DEFAULT_CABINET_SCRAP_PERCENT;
+        }
+
+        const parsedScrapPercent = Number(scrapPercent);
+
+        return Number.isFinite(parsedScrapPercent) ? parsedScrapPercent : DEFAULT_CABINET_SCRAP_PERCENT;
+    }
+
+    function buildCabinetWeightBreakdown(netWeightKg, orderWeightKg, scrapPercent = null) {
         const normalizedNetWeightKg = numericWeight(netWeightKg);
 
         if (normalizedNetWeightKg === null) {
             return null;
         }
 
-        const scrapWeightKg = normalizedNetWeightKg * CABINET_SCRAP_RATE;
+        const normalizedScrapPercent = normalizeScrapPercent(scrapPercent);
+        const usesDefaultScrapPercent = scrapPercent === null || scrapPercent === undefined || Number.isNaN(Number(scrapPercent));
+        const scrapWeightKg = normalizedNetWeightKg * (normalizedScrapPercent / 100);
         const availableWeightKg = normalizedNetWeightKg - scrapWeightKg;
         const normalizedOrderWeightKg = numericWeight(orderWeightKg);
 
         if (normalizedOrderWeightKg === null) {
             return {
                 netWeightKg: normalizedNetWeightKg,
+                scrapPercent: normalizedScrapPercent,
+                usesDefaultScrapPercent,
                 scrapWeightKg,
                 availableWeightKg,
                 orderWeightKg: null,
@@ -904,6 +932,8 @@ function bootDashboard() {
 
         return {
             netWeightKg: normalizedNetWeightKg,
+            scrapPercent: normalizedScrapPercent,
+            usesDefaultScrapPercent,
             scrapWeightKg,
             availableWeightKg,
             orderWeightKg: normalizedOrderWeightKg,
@@ -1142,7 +1172,7 @@ function renderNextMatchingUids(matchingUids) {
                         <dt>Menge</dt>
                         <dd>${formatOrderQuantity(detail.order?.va_menge_kg)}</dd>
                         <dt>Passende UIDs</dt>
-                        <dd>${renderMatchingUids(detail.matchingUids, detail.order?.va_menge_kg)}</dd>
+                        <dd>${renderMatchingUids(detail.matchingUids, detail.order?.va_menge_kg, detail.order?.ksk_percent)}</dd>
                     </dl>
                 </div>
             </section>
@@ -1226,7 +1256,7 @@ function renderNextMatchingUids(matchingUids) {
         return order?.required_product_name ?? order?.matstamm_maktx ?? '—';
     }
 
-    function renderMatchingUids(matchingUids, orderWeightKg = null) {
+    function renderMatchingUids(matchingUids, orderWeightKg = null, scrapPercent = null) {
         if (matchingUids.length === 0) {
             return '<span class="panel-card__muted">Keine passende UID im Kühlhaus registriert</span>';
         }
@@ -1238,14 +1268,16 @@ function renderNextMatchingUids(matchingUids) {
                 const weightBreakdown = buildCabinetWeightBreakdown(
                     matchingUid.cabinet_content?.net_weight_kg ?? null,
                     orderWeightKg,
+                    scrapPercent,
                 );
+                const scrapLabel = weightBreakdown?.usesDefaultScrapPercent ? 'Verschnitt Standard' : 'Verschnitt KSK';
 
                 return `
                         <button class="job-order-card__match-button" type="button" data-open-overview-uid="${escapeHtml(matchingUid.uid)}">
                             <strong>UID: ${escapeHtml(matchingUid.uid)}</strong>
                             ${weightBreakdown ? `
                                 <small>Netto: ${escapeHtml(formatCabinetWeight(weightBreakdown.netWeightKg))}</small>
-                                <small>Verschnitt ca. 10 %: ${escapeHtml(formatCabinetWeight(weightBreakdown.scrapWeightKg))}</small>
+                                <small>${escapeHtml(scrapLabel)} (${escapeHtml(formatPercent(weightBreakdown.scrapPercent))}): ${escapeHtml(formatCabinetWeight(weightBreakdown.scrapWeightKg))}</small>
                                 <small>Verfuegbar: ${escapeHtml(formatCabinetWeight(weightBreakdown.availableWeightKg))}</small>
                                 ${weightBreakdown.orderWeightKg === null ? '' : `<small>Auftragsmenge: ${escapeHtml(formatCabinetWeight(weightBreakdown.orderWeightKg))}</small>`}
                                 ${weightBreakdown.remainingAfterOrderKg !== null ? `<small>Rest nach Auftrag: ${escapeHtml(formatCabinetWeight(weightBreakdown.remainingAfterOrderKg))}</small>` : ''}

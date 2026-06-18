@@ -9,6 +9,7 @@ class JobMatchingService
         private ProductionOrderRepository $productionOrderRepository,
         private ColdstoreInventoryRepository $coldstoreInventoryRepository,
         private EtikInterfaceLookupRepository $etikInterfaceLookupRepository,
+        private KskCsvLookup $kskCsvLookup,
     ) {}
 
     /**
@@ -24,6 +25,7 @@ class JobMatchingService
      *         matstamm_fuellartnr: string,
      *         required_product_name: ?string,
      *         va_menge_kg: ?float,
+     *         ksk_percent: ?float,
      *         required_pe_text1: string,
      *         va_beginn_soll: string,
      *         va_beginn_ist: ?string,
@@ -39,6 +41,7 @@ class JobMatchingService
      *         matstamm_fuellartnr: string,
      *         required_product_name: ?string,
      *         va_menge_kg: ?float,
+     *         ksk_percent: ?float,
      *         required_pe_text1: string,
      *         va_beginn_soll: string,
      *         va_beginn_ist: ?string,
@@ -141,6 +144,7 @@ class JobMatchingService
      *     matstamm_fuellartnr: string,
      *     required_product_name: ?string,
      *     va_menge_kg: ?float,
+     *     ksk_percent: ?float,
      *     va_beginn_soll: string,
      *     va_beginn_ist: ?string,
      *     va_ende_soll: ?string,
@@ -155,6 +159,7 @@ class JobMatchingService
      *     matstamm_fuellartnr: string,
      *     required_product_name: ?string,
      *     va_menge_kg: ?float,
+     *     ksk_percent: ?float,
      *     required_pe_text1: string,
      *     va_beginn_soll: string,
      *     va_beginn_ist: ?string,
@@ -169,6 +174,7 @@ class JobMatchingService
         $requiredProductName = filled($order['required_product_name'] ?? null)
             ? trim((string) $order['required_product_name'])
             : $this->etikInterfaceLookupRepository->productNameForRequiredPeText1($requiredPeText1);
+        $kskPercent = $this->kskCsvLookup->percentForRequiredPeText1($requiredPeText1);
 
         return [
             'va_id' => (int) $order['va_id'],
@@ -179,6 +185,7 @@ class JobMatchingService
             'matstamm_fuellartnr' => $matstammFuellArtNr,
             'required_product_name' => filled($requiredProductName) ? trim((string) $requiredProductName) : null,
             'va_menge_kg' => isset($order['va_menge_kg']) ? (float) $order['va_menge_kg'] : null,
+            'ksk_percent' => $kskPercent,
             'required_pe_text1' => $requiredPeText1,
             'va_beginn_soll' => trim((string) $order['va_beginn_soll']),
             'va_beginn_ist' => $order['va_beginn_ist'] ? trim((string) $order['va_beginn_ist']) : null,

@@ -3,10 +3,11 @@
 use App\Services\ColdstoreJobs\ColdstoreInventoryRepository;
 use App\Services\ColdstoreJobs\EtikInterfaceLookupRepository;
 use App\Services\ColdstoreJobs\JobMatchingService;
+use App\Services\ColdstoreJobs\KskCsvLookup;
 use App\Services\ColdstoreJobs\LineWorkplaceMapper;
 use App\Services\ColdstoreJobs\ProductionOrderRepository;
 
-function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryOverride = null, ?array $lookupOverride = null, ?array $cabinetContentOverride = null): JobMatchingService
+function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryOverride = null, ?array $lookupOverride = null, ?array $cabinetContentOverride = null, ?array $kskOverride = null): JobMatchingService
 {
     return new JobMatchingService(
         new LineWorkplaceMapper,
@@ -247,6 +248,15 @@ function makeJobMatchingService(?array $orderOverride = null, ?array $inventoryO
                 return $this->lookupOverride[$requiredPeText1] ?? null;
             }
         },
+        new class($kskOverride) extends KskCsvLookup
+        {
+            public function __construct(private ?array $kskOverride) {}
+
+            public function percentForRequiredPeText1(string $requiredPeText1): ?float
+            {
+                return $this->kskOverride[trim($requiredPeText1)] ?? null;
+            }
+        },
     );
 }
 
@@ -264,6 +274,7 @@ it('returns a matching uid with track assignment for the default mock line', fun
         ->and($payload['order']['matstamm_fuellartnr'])->toBe('F5106')
         ->and($payload['order']['required_product_name'])->toBe('Produkt fuer PEText1 95106')
         ->and($payload['order']['va_menge_kg'])->toBe(123.45)
+        ->and($payload['order']['ksk_percent'])->toBeNull()
         ->and($payload['order']['required_pe_text1'])->toBe('95106')
         ->and($payload['next_order'])->toBeNull()
         ->and($payload['next_matching_uids'])->toBe([])
@@ -341,10 +352,28 @@ it('returns a current order and a following order with separate inventory matche
         ->and($payload['next_order']['va_auftragsnr'])->toBe('NEXT')
         ->and($payload['next_order']['required_product_name'])->toBe('Resolved next product')
         ->and($payload['next_order']['va_menge_kg'])->toBe(98.7)
+        ->and($payload['order']['ksk_percent'])->toBeNull()
+        ->and($payload['next_order']['ksk_percent'])->toBeNull()
         ->and($payload['matching_uids'])->toHaveCount(1)
         ->and($payload['matching_uids'][0]['uid'])->toBe('UID-CURRENT')
         ->and($payload['next_matching_uids'])->toHaveCount(1)
         ->and($payload['next_matching_uids'][0]['uid'])->toBe('UID-NEXT');
+});
+
+it('resolves the ksk percent from the configured lookup by required pe text1', function () {
+    $payload = makeJobMatchingService(
+        null,
+        null,
+        null,
+        null,
+        [
+            '95106' => 8.5,
+            '91200' => 12.25,
+        ],
+    )->payloadForLine(6);
+
+    expect($payload['order']['ksk_percent'])->toBe(8.5)
+        ->and($payload['next_order'])->toBeNull();
 });
 
 it('returns no matching uid when the order has no current coldstore hit', function () {

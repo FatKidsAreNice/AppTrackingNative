@@ -11,9 +11,11 @@ it('returns a matching job payload for a line with a track linked uid', function
         ->assertJsonPath('selected_line', 6)
         ->assertJsonPath('arbeitsplatz_nr', 3506)
         ->assertJsonPath('order.required_pe_text1', '95106')
+        ->assertJsonPath('order.ksk_percent', null)
         ->assertJsonPath('order.required_product_name', 'Produkt fuer PEText1 95106')
         ->assertJsonPath('order.va_menge_kg', 123.45)
         ->assertJsonPath('next_order.required_pe_text1', '91200')
+        ->assertJsonPath('next_order.ksk_percent', null)
         ->assertJsonPath('next_order.required_product_name', 'Rinderschinken fuer PEText1 91200')
         ->assertJsonPath('next_order.va_menge_kg', 98.7)
         ->assertJsonPath('matching_uids.0.uid', '32171700')
@@ -23,6 +25,32 @@ it('returns a matching job payload for a line with a track linked uid', function
         ->assertJsonPath('matching_uids.0.track_id', 101)
         ->assertJsonPath('next_matching_uids.0.uid', '32167948')
         ->assertJsonPath('next_matching_uids.0.cabinet_content.material_pe_text1', '91200');
+});
+
+it('adds the ksk percent from the configured csv to the jobs payload', function () {
+    Config::set('coldstore.jobs.production_orders.source', 'mock');
+
+    $directory = storage_path('app/testing');
+
+    if (! is_dir($directory)) {
+        mkdir($directory, 0777, true);
+    }
+
+    $path = $directory.DIRECTORY_SEPARATOR.'coldstore-jobs-ksk.csv';
+
+    file_put_contents($path, <<<'CSV'
+foo;Art.-Nr.;Soll KSK in %
+x;95106;8,5
+y;91200;11,75
+CSV);
+
+    Config::set('coldstore.jobs.ksk_csv_path', $path);
+
+    $response = $this->getJson(route('api.coldstore.jobs', ['selected_line' => 6]));
+
+    $response->assertSuccessful()
+        ->assertJsonPath('order.ksk_percent', 8.5)
+        ->assertJsonPath('next_order.ksk_percent', 11.75);
 });
 
 it('accepts line as an alias for selected line in the jobs api', function () {

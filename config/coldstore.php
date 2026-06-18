@@ -24,6 +24,8 @@ return [
         'data_source' => env('COLDSTORE_JOBS_DATA_SOURCE', 'local'),
         'remote_api_base_url' => env('COLDSTORE_REMOTE_API_BASE_URL'),
         'jobs_path' => env('COLDSTORE_JOBS_PATH', '/api/coldstore/jobs'),
+        'default_scrap_percent' => (float) env('COLDSTORE_JOBS_DEFAULT_SCRAP_PERCENT', 10),
+        'ksk_csv_path' => env('COLDSTORE_JOBS_KSK_CSV_PATH', storage_path('app/coldstore/ksk-values.csv')),
         'production_orders' => [
             'source' => env('COLDSTORE_PRODUCTION_ORDER_SOURCE', 'mock'),
             'sqlsrv_connection' => env('COLDSTORE_JOBS_SQLSRV_CONNECTION', 'coldstore_sqlsrv'),
