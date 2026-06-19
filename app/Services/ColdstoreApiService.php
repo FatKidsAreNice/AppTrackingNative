@@ -173,7 +173,7 @@ class ColdstoreApiService
                 'remote_error' => data_get($payload, 'meta.remote_error'),
             ],
             'overview' => [
-                'title' => (string) ($payload['overview']['title'] ?? 'Coldstore Overview'),
+                'title' => (string) ($payload['overview']['title'] ?? 'Kühlhaus Übersicht'),
                 'subtitle' => (string) ($payload['overview']['subtitle'] ?? 'Live-Tracking und BEV-Sync'),
                 'status_text' => (string) ($payload['overview']['status_text'] ?? $this->statusText($sourceMode, $syncDelta)),
                 'track_count' => count($tracks),
@@ -195,8 +195,8 @@ class ColdstoreApiService
             'tracks' => $tracks,
             'highlighted_racks' => $highlightedRacks,
             'coldstore' => [
-                'name' => (string) data_get($payload, 'coldstore.name', 'Kühlhaus Nord'),
-                'summary' => (string) data_get($payload, 'coldstore.summary', 'Live-Overview vom anderen PC'),
+                'name' => (string) data_get($payload, 'coldstore.name', 'Kühlhaus 41'),
+                'summary' => (string) data_get($payload, 'coldstore.summary', 'Live Ansicht'),
                 'sections' => $this->normalizeSections($payload['coldstore']['sections'] ?? [], $highlightedRacks),
             ],
         ];

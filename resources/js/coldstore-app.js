@@ -687,17 +687,17 @@ function bootDashboard() {
         const normalizedReason = String(reason ?? 'unknown').trim();
         const reasonLabels = {
             eligible: 'Track ist bereit zur Hochzeit.',
-            known_existing: 'Track gehoert zum Startbestand und ist gesperrt.',
+            known_existing: 'Track gehört zum Startbestand und ist gesperrt.',
             track_already_assigned: 'Track hat bereits eine UID.',
             track_moving: 'Track bewegt sich noch.',
             motion_state_moving: 'Track bewegt sich noch.',
             track_lost: 'Track ist aktuell nicht sicher sichtbar.',
             track_not_visible: 'Track ist aktuell nicht sicher sichtbar.',
             identity_recovered_weak: 'Track wurde nur unsicher wiedergefunden.',
-            identity_not_safe: 'Die Identitaet des Tracks ist nicht sicher genug.',
-            not_confirmed: 'Track ist noch nicht bestaetigt.',
-            outside_storage_zone: 'Track steht nicht in einer gueltigen Lagerzone.',
-            unknown: 'Remote-Status fehlt oder ist noch nicht verfuegbar.',
+            identity_not_safe: 'Die Identität des Tracks ist nicht sicher genug.',
+            not_confirmed: 'Track ist noch nicht bestätigt.',
+            outside_storage_zone: 'Track steht nicht in einer gültigen Lagerzone.',
+            unknown: 'Remote-Status fehlt oder ist noch nicht verfügbar.',
         };
 
         return reasonLabels[normalizedReason] ?? `Grund: ${normalizedReason}`;
@@ -1278,12 +1278,12 @@ function renderNextMatchingUids(matchingUids) {
                             ${weightBreakdown ? `
                                 <small>Netto: ${escapeHtml(formatCabinetWeight(weightBreakdown.netWeightKg))}</small>
                                 <small>${escapeHtml(scrapLabel)} (${escapeHtml(formatPercent(weightBreakdown.scrapPercent))}): ${escapeHtml(formatCabinetWeight(weightBreakdown.scrapWeightKg))}</small>
-                                <small>Verfuegbar: ${escapeHtml(formatCabinetWeight(weightBreakdown.availableWeightKg))}</small>
+                                <small>Verfügbar: ${escapeHtml(formatCabinetWeight(weightBreakdown.availableWeightKg))}</small>
                                 ${weightBreakdown.orderWeightKg === null ? '' : `<small>Auftragsmenge: ${escapeHtml(formatCabinetWeight(weightBreakdown.orderWeightKg))}</small>`}
                                 ${weightBreakdown.remainingAfterOrderKg !== null ? `<small>Rest nach Auftrag: ${escapeHtml(formatCabinetWeight(weightBreakdown.remainingAfterOrderKg))}</small>` : ''}
                                 ${weightBreakdown.missingWeightKg !== null ? `<small>Fehlt: ${escapeHtml(formatCabinetWeight(weightBreakdown.missingWeightKg))}</small>` : ''}
                             ` : ''}
-                            <small>Nach: ${escapeHtml(matchingUid.cabinet_content?.lager_nach_name ?? 'unbekannt')}</small>
+                            <small>Steht im: ${escapeHtml(matchingUid.cabinet_content?.lager_nach_name ?? 'unbekannt')}</small>
                         </button>
                     `;
             })
@@ -1372,7 +1372,7 @@ function renderNextMatchingUids(matchingUids) {
                             <small>${escapeHtml(track.position_label || `x=${track.x.toFixed(2)}, y=${track.y.toFixed(2)}`)}</small>
                         </span>
                         <span>
-                            <strong>${selected ? 'Ausgewahlt' : trackStatusLabel(track)}</strong>
+                            <strong>${selected ? 'Ausgewählt' : trackStatusLabel(track)}</strong>
                             <small>${escapeHtml(track.barcode_id || blockedReason)}</small>
                         </span>
                     </button>
@@ -1424,7 +1424,7 @@ function renderNextMatchingUids(matchingUids) {
             ['Track ID', selectedTrack.track_id],
             ['Barcode', selectedTrack.barcode_id || '-'],
             ['Marriage State', selectedTrack.marriage_state || 'unknown'],
-            ['Heiratsfaehig', selectedTrack.is_marriage_eligible ? 'Ja' : 'Nein'],
+            ['Heiratsfähig', selectedTrack.is_marriage_eligible ? 'Ja' : 'Nein'],
             ['Grund', humanizeEligibilityReason(selectedTrack.eligibility_reason)],
             ['Blocker', formatEligibilityBlockers(selectedTrack)],
             ['Zone', selectedTrack.zone_label || '-'],
@@ -1433,7 +1433,6 @@ function renderNextMatchingUids(matchingUids) {
             ['Motion', selectedTrack.motion_state || '-'],
             ['Identity', selectedTrack.identity_state || 'unknown'],
             ['Identity Confidence', formatIdentityConfidence(selectedTrack.identity_confidence)],
-            ['Last Seen Age', formatTrackerStamp(selectedTrack.last_seen_age_sec)],
             ['In Ansicht seit', new Date(sessionSeenAt).toLocaleTimeString('de-DE')],
             ['Dauer in Ansicht', formatDuration(Date.now() - sessionSeenAt)],
             ['Letzte Sichtung', formatLastSeenTime(selectedTrack.last_stamp_sec)],
@@ -1596,7 +1595,7 @@ function bootScanner() {
             : payload;
 
         scanStatus.textContent = isMarriageMode
-            ? 'Ordne UID dem ausgewaehlten Track zu ...'
+            ? 'Ordne UID dem ausgewählten Track zu ...'
             : 'Sende Barcode an den anderen PC ...';
 
         try {

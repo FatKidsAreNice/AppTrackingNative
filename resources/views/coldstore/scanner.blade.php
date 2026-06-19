@@ -37,7 +37,7 @@
                     <div class="panel-card__header">
                         <div>
                             <p class="panel-card__eyebrow">UID Zuweisung</p>
-                            <h2 class="panel-card__title">Ausgewaehlter Track</h2>
+                            <h2 class="panel-card__title">Ausgewählter Track</h2>
                         </div>
                         <span class="status-pill status-pill--ok">Modus: UID zuweisen</span>
                     </div>
@@ -51,7 +51,7 @@
                         <dt>Position</dt>
                         <dd>{{ $marriageContext['position_label'] }}</dd>
                     </dl>
-                    <a class="track-marriage-button-secondary" href="{{ $marriageContext['overview_url'] }}">Zurueck zur Overview</a>
+                    <a class="track-marriage-button-secondary" href="{{ $marriageContext['overview_url'] }}">Zurück zur Overview</a>
                 </article>
             @endif
 

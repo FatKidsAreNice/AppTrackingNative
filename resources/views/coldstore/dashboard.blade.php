@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Coldstore Overview')
+@section('title', 'Kühlhaus Dashboard')
 
 @section('content')
     <div
